@@ -26,10 +26,10 @@ namespace TokenGenLib.Internal
     public string Server => _server;
     public TimeSpan WatchDuration => _watchDuration;
     public TimeSpan RestDuration => _restDuration;
-    int IConfigureApiLimits.RateLimit => _rateLimit;
-    int IConfigureApiLimits.TotalLimit => _maxTotalForDuration;
+    public int RateLimit => _rateLimit;
+    public int TotalLimit => _maxTotalForDuration;
 
-    void IConfigureApiLimits.Setup(string server, int rateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration = int.MinValue, bool isSliding = false)
+    public void Setup(string server, int rateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration = int.MinValue, bool isSliding = false)
     {
       _server = server;
       _rateLimit = rateLimit;

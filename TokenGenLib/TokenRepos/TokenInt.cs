@@ -9,8 +9,8 @@ namespace TokenGenLib.Internal
   {
     public string Id { get; set; }
     public DateTime IssuedOn { get; set; }
-    public string Client { get; internal set; }
-    public string Server { get; internal set; }
+    public string Client { get; set; }
+    public string Server { get; set; }
   }
 
   public partial class TokenInt

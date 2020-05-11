@@ -10,7 +10,37 @@ namespace TokenGenLib.Internal
     public event EventHandler<TokenIssuedEventArgs> TokenIssued;
     public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
   }
+
+
   public interface ILimitRate { }
   public interface ILimitWindow { }
+
+
+  public class BaseTokenRepository
+  {
+    protected IConfigureApiLimits _configureThrottle;
+    public event EventHandler<TokenIssuedEventArgs> TokenIssued;
+    public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
+
+    public BaseTokenRepository(IConfigureApiLimits configureThrottle)
+    {
+      _configureThrottle = configureThrottle;
+    }
+    public string Name => _configureThrottle.Server;
+
+    #region Events
+    protected virtual void OnTokenIssued(TokenInt token)
+    {
+      AsyncEventsHelper.RaiseEventAsync(TokenIssued, this, new TokenIssuedEventArgs { Token = token.Id, Client = token.Client, Time = token.IssuedOn });
+    }
+
+    //cannot raise this event since this is blocking token repo.
+    protected virtual void OnMaxTokenIssued(TokenInt token, int counter)
+    {
+      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = token.Client, Time = token.IssuedOn });
+    }
+    #endregion Events
+
+  }
 
 }

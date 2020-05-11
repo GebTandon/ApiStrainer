@@ -10,7 +10,7 @@ namespace TokenGenLib.Internal
     public event EventHandler<TokenIssuedEventArgs> TokenIssued;
     public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
 
-    internal NonBlockingTokenRepo(IConfigureApiLimits configureThrottle)
+    public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle)
     {
       _configureThrottle = configureThrottle;
       _tokenCache = new ConcurrentDictionary<string, TokenInt>(1, configureThrottle.RateLimit);//Yatin: possible error here , as the Remove operation can be done on multiple threads !! Might have to change 1 to a number = maxLimit
