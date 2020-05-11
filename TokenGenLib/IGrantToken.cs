@@ -11,9 +11,9 @@ namespace TokenGenLib
 
   public class ApiGateway : IGrantToken
   {
-    private IList<ITokenRepository> _tokenRepos;
-    private ITokenRepository _iLimitRate;
-    private ITokenRepository _iLimitWindow;
+    private readonly IList<ITokenRepository> _tokenRepos;
+    private readonly ITokenRepository _iLimitRate;
+    private readonly ITokenRepository _iLimitWindow;
 
     public ApiGateway(IList<ITokenRepository> tokenRepos)
     {

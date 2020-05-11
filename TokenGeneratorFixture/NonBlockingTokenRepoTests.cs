@@ -1,14 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Moq;
-using NuGet.Frameworks;
-using TokenGenLib;
 using TokenGenLib.Internal;
 using Xunit;
 
@@ -22,7 +16,7 @@ namespace TokenGeneratorFixture
     readonly ConcurrentBag<MaxTokenIssuedEventArgs> _callbackMaxTokensIssued = new ConcurrentBag<MaxTokenIssuedEventArgs>();
     readonly ConcurrentBag<TokenInt> _tokensIssued = new ConcurrentBag<TokenInt>();
 
-    string _clientName = "xUnitTest";
+    readonly string _clientName = "xUnitTest";
     const string _serverName = "NonBlock Api";
 
     [Fact]
@@ -30,22 +24,32 @@ namespace TokenGeneratorFixture
     {
       var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, false);
       sut.TokenIssued += Sut_TokenIssued;
-      var randomClientId = Guid.NewGuid().ToString();
 
-      var token = sut.PullToken(randomClientId);
-      _tokensIssued.Add(token);
+      var threadCount = 1;
+      using (var countdownEvent = new CountdownEvent(threadCount))
+      {
+        for (var i = 0; i < threadCount; i++)
+          ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
+            new ThreadFuncObj { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent });
+        countdownEvent.Wait();
+      }
 
-      Task.Delay(TimeSpan.FromSeconds(1));
+      var token = _tokensIssued.First();
+
       Assert.NotNull(token);
-      Assert.Equal(randomClientId, token.Client);
+      Assert.Equal(_clientName, token.Client);
       Assert.Empty(_callbackMaxTokensIssued);
       Assert.Single(_callbackTokensIssued);
-      Assert.Equal(randomClientId, _callbackTokensIssued.First().Client);
+      Assert.Equal(_clientName, _callbackTokensIssued.First().Client);
       Assert.Equal(_serverName, token.Server);
       Assert.NotNull(token.Id);
       Assert.NotEqual(Guid.Empty, Guid.Parse(token.Id));
+
+      /* Time validation does not work, due to how threading works, unless we give large time gaps, 
+       * at which point time check is irrelevant.
       Assert.True(DateTime.Now - token.IssuedOn > TimeSpan.FromMilliseconds(1));
       Assert.True(DateTime.Now - token.IssuedOn < TimeSpan.FromMilliseconds(10));
+      */
     }
 
     [Fact]
@@ -60,8 +64,8 @@ namespace TokenGeneratorFixture
       using (var countdownEvent = new CountdownEvent(threadCount))
       {
         for (var i = 0; i < threadCount; i++)
-          ThreadPool.QueueUserWorkItem(new WaitCallback(PullTokenOnAThreadPool_Thread),
-            new SutNTokenBag { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent });
+          ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
+            new ThreadFuncObj { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent, ExtApiCallDuration = TimeSpan.FromMilliseconds(500) });
         countdownEvent.Wait();
       }
 
@@ -71,18 +75,19 @@ namespace TokenGeneratorFixture
       Assert.All(_tokensIssued, x => Assert.Equal(_clientName, x.Client));
       Assert.All(_tokensIssued, x => Assert.Equal(_serverName, x.Server));
 
+      Assert.Equal(2, _callbackTokensIssued.Count);
+      Assert.All(_callbackTokensIssued, x => Assert.NotNull(x));
       _tokensIssued.TryTake(out TokenInt token1);
       _tokensIssued.TryTake(out TokenInt token2);
-      Assert.Equal(2, _callbackTokensIssued.Count);
-      Assert.NotNull(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)).FirstOrDefault());
-      Assert.NotNull(_callbackTokensIssued.Where(x => x.Token.Equals(token2.Id)).FirstOrDefault());
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)));
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token2.Id)));
 
       Assert.Empty(_callbackMaxTokensIssued);
 
     }
 
     [Fact]
-    public void Rus_MultipleThreads_And_Issues_MultipleTokens_And_Raises_Events_With_Same_TokenId()
+    public void Rus_MultipleThreads_LongRunning_Apis_Raises_MaxTokenIssued_Event()
     {
       var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, false);
       sut.TokenIssued += Sut_TokenIssued;
@@ -93,36 +98,85 @@ namespace TokenGeneratorFixture
       using (var countdownEvent = new CountdownEvent(threadCount))
       {
         for (var i = 0; i < threadCount; i++)
-          ThreadPool.QueueUserWorkItem(new WaitCallback(PullTokenOnAThreadPool_Thread),
-            new SutNTokenBag { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent });
+          ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
+            new ThreadFuncObj { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent, ExtApiCallDuration = TimeSpan.FromMilliseconds(500) });
         countdownEvent.Wait();
       }
 
-      Assert.Equal(3, _tokensIssued.Count);
-      Assert.Collection(_tokensIssued,
-        x => Assert.NotNull(x),
-        x => Assert.NotNull(x),
-        x => Assert.Null(x)
-        );
+      Assert.Equal(3, _tokensIssued.Count);//3 token issue calls
+      Assert.Equal(2, _tokensIssued.Where(x => x != null).Count()); //2 actual tokens 
+      Assert.Single(_tokensIssued.Where(x => x == null));//and 1 null
 
-      _tokensIssued.TryTake(out TokenInt token1);
-      _tokensIssued.TryTake(out TokenInt token2);
       Assert.Equal(2, _callbackTokensIssued.Count);
-      Assert.NotNull(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)).FirstOrDefault());
-      Assert.NotNull(_callbackTokensIssued.Where(x => x.Token.Equals(token2.Id)).FirstOrDefault());
+      var token1 = _tokensIssued.First(x => x != null);
+      var token2 = _tokensIssued.Last(x => x != null);
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)));
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token2.Id)));
 
-      Assert.Single(_callbackMaxTokensIssued);
-
+      Assert.Single(_callbackMaxTokensIssued);//one call was made to MaxLimit reached.
     }
 
-    private void PullTokenOnAThreadPool_Thread(object sutNTokenBagObj)
+    [Fact]
+    public void Rus_MultipleThreads_ShortRunning_Apis_DoesNotRaise_MaxTokenIssued_Event()
     {
-      var theObj = sutNTokenBagObj as SutNTokenBag;
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, false);
+      sut.TokenIssued += Sut_TokenIssued;
+      sut.MaxTokenIssued += Sut_MaxTokenIssued;
+      var randomClientId = Guid.NewGuid().ToString();
+
+      var threadCount1 = 2;
+      using (var countdownEvent1 = new CountdownEvent(threadCount1))
+      {
+        for (var i = 0; i < threadCount1; i++)
+          ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
+            new ThreadFuncObj
+            {
+              TokenRepo = sut,
+              Tokens = _tokensIssued,
+              SyncObj = countdownEvent1,
+              ExtApiCallDuration = TimeSpan.FromMilliseconds(200)
+            });
+        countdownEvent1.Wait();
+      }
+
+      var threadCount2 = 2;
+      using (var countdownEvent2 = new CountdownEvent(threadCount2))
+      {
+        for (var i = 0; i < threadCount2; i++)
+          ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
+            new ThreadFuncObj
+            {
+              TokenRepo = sut,
+              Tokens = _tokensIssued,
+              SyncObj = countdownEvent2,
+              ExtApiCallDuration = TimeSpan.FromMilliseconds(200)
+            });
+        countdownEvent2.Wait();
+      }
+
+      Assert.Equal(4, _tokensIssued.Count);
+      Assert.All(_tokensIssued, (x) => Assert.NotNull(x));
+
+      Assert.Equal(4, _callbackTokensIssued.Count);
+      Assert.All(_callbackTokensIssued, (x) => Assert.NotNull(x));
+      var token1 = _tokensIssued.First(x => x != null);
+      var token4 = _tokensIssued.Last(x => x != null);
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)));
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token4.Id)));
+
+      Assert.Empty(_callbackMaxTokensIssued);//one call was made to MaxLimit reached.
+    }
+
+    private void PullToken_OnAThreadPool_Thread(object sutNTokenBagObj)
+    {
+      var theObj = sutNTokenBagObj as ThreadFuncObj;
       var tmpToken = theObj.TokenRepo.PullToken(_clientName);
       theObj.Tokens.Add(tmpToken);
+      Thread.Sleep(theObj.ExtApiCallDuration);//Simulate external API Call.
+      if (tmpToken != null)//null token means token was not issued in this case... so no need to return it.
+        theObj.TokenRepo.ReturnToken(tmpToken.Id);
       theObj.SyncObj.Signal();
     }
-
 
     #region EventHanders
     private void Sut_MaxTokenIssued(object sender, MaxTokenIssuedEventArgs e)
@@ -150,10 +204,11 @@ namespace TokenGeneratorFixture
     }
   }
 
-  internal class SutNTokenBag
+  internal class ThreadFuncObj
   {
     internal ITokenRepository TokenRepo { get; set; }
     internal ConcurrentBag<TokenInt> Tokens { get; set; }
     internal CountdownEvent SyncObj { get; set; }
+    internal TimeSpan ExtApiCallDuration { get; set; }//Yatin: If tests fail randomly on build server, increase this time in tests... The thread scheduler may be busy.. Taking long time to schedule threadpool threads.
   }
 }

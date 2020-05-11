@@ -26,6 +26,7 @@ namespace TokenGenLib.Internal
     {
       _configureThrottle = configureThrottle;
     }
+    
     public string Name => _configureThrottle.Server;
 
     #region Events
@@ -35,9 +36,9 @@ namespace TokenGenLib.Internal
     }
 
     //cannot raise this event since this is blocking token repo.
-    protected virtual void OnMaxTokenIssued(TokenInt token, int counter)
+    protected virtual void OnMaxTokenIssued(string client, int counter)
     {
-      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = token.Client, Time = token.IssuedOn });
+      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = client, Time = DateTime.Now });
     }
     #endregion Events
 

@@ -3,20 +3,14 @@ using System.Collections.Concurrent;
 
 namespace TokenGenLib.Internal
 {
-  public class NonBlockingTokenRepo : ITokenRepository, ILimitRate
+  public class NonBlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate
   {
-    ConcurrentDictionary<string, TokenInt> _tokenCache;
-    private IConfigureApiLimits _configureThrottle;
-    public event EventHandler<TokenIssuedEventArgs> TokenIssued;
-    public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
+    readonly ConcurrentDictionary<string, TokenInt> _tokenCache;
 
-    public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle)
+    public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
     {
-      _configureThrottle = configureThrottle;
       _tokenCache = new ConcurrentDictionary<string, TokenInt>(1, configureThrottle.RateLimit);//Yatin: possible error here , as the Remove operation can be done on multiple threads !! Might have to change 1 to a number = maxLimit
     }
-
-    public string Name => _configureThrottle.Server;
 
     public TokenInt PullToken(string client)
     {
@@ -30,7 +24,7 @@ namespace TokenGenLib.Internal
           OnTokenIssued(token);
           return token;
         }
-        OnMaxTokenIssued(null, _configureThrottle.RateLimit);
+        OnMaxTokenIssued(client, _configureThrottle.RateLimit);
         return null;
       }
     }
@@ -50,18 +44,6 @@ namespace TokenGenLib.Internal
     {
       return new TokenInt { Id = Guid.NewGuid().ToString(), IssuedOn = DateTime.Now, Client = client, Server = server };
     }
-
-    #region Events
-    void OnTokenIssued(TokenInt token)
-    {
-      AsyncEventsHelper.RaiseEventAsync(TokenIssued, this, new TokenIssuedEventArgs { Token = token.Id, Client = token.Client, Time = token.IssuedOn });
-    }
-
-    void OnMaxTokenIssued(TokenInt token, int counter)
-    {
-      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = token.Client, Time = token.IssuedOn });
-    }
-    #endregion Events
 
   }
 }

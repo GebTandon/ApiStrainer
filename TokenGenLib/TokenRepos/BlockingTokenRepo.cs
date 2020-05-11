@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Globalization;
 
 namespace TokenGenLib.Internal
 {
 
-  public class BlockingTokenRepo : ITokenRepository, ILimitRate, IDisposable
+  public class BlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate, IDisposable
   {
-    BlockingCollection<TokenInt> _tokenCache;
-    private IConfigureApiLimits _configureThrottle;
-    public event EventHandler<TokenIssuedEventArgs> TokenIssued;
-    public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
+    readonly BlockingCollection<TokenInt> _tokenCache;
     const string constTokenId = "ThrowAwayToken";
 
-    public BlockingTokenRepo(IConfigureApiLimits configureThrottle)
+    public BlockingTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
     {
-      _configureThrottle = configureThrottle;
       _tokenCache = new BlockingCollection<TokenInt>(_configureThrottle.RateLimit);//Yatin: possible error here , as the Remove operation can be done on multiple threads !!
     }
-
-    public string Name => _configureThrottle.Server;
 
     public TokenInt PullToken(string client)
     {
@@ -39,26 +32,6 @@ namespace TokenGenLib.Internal
     private TokenInt GenerateToken(string server, string client)
     {
       return new TokenInt { Id = constTokenId, IssuedOn = DateTime.Now, Client = client, Server = server };
-    }
-
-
-    #region Events
-    void OnTokenIssued(TokenInt token)
-    {
-      AsyncEventsHelper.RaiseEventAsync(TokenIssued, this, new TokenIssuedEventArgs { Token = token.Id, Client = token.Client, Time = token.IssuedOn });
-    }
-
-    //cannot raise this event since this is blocking token repo.
-    void OnMaxTokenIssued(TokenInt token, int counter)
-    {
-      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = token.Client, Time = token.IssuedOn });
-    }
-    #endregion Events
-
-    private string GetTokenId()
-    {
-      return nameof(BlockingTokenRepo);//same constant string, since blocking collection is just a bag of items, no specific item can be returned.
-      //return Guid.NewGuid().ToString();
     }
 
     #region IDisposable Support

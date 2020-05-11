@@ -8,20 +8,15 @@ namespace TokenGenLib.TokenRepos
   /// <summary>
   /// counts number of calls made within fix window, the window starts when first call is made.
   /// </summary>
-  public class FixWindowTokenRepo : ITokenRepository, ILimitWindow, IDisposable
+  public class FixWindowTokenRepo : BaseTokenRepository, ITokenRepository, ILimitWindow, IDisposable
   {
-    public event EventHandler<TokenIssuedEventArgs> TokenIssued;
-    public event EventHandler<MaxTokenIssuedEventArgs> MaxTokenIssued;
-
-    private IConfigureApiLimits _configureThrottle;
     int _counter;
-    private Timer _watchWindowTimer;
-    private Timer _restWindowTimer;
-    private bool _open;
+    private readonly Timer _watchWindowTimer;
+    private readonly Timer _restWindowTimer;
+    private readonly bool _open;
 
-    public FixWindowTokenRepo(IConfigureApiLimits configureThrottle)
+    public FixWindowTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
     {
-      _configureThrottle = configureThrottle;
       _counter = 0;
       _open = true;
       _watchWindowTimer = new Timer()
@@ -39,7 +34,6 @@ namespace TokenGenLib.TokenRepos
       _watchWindowTimer.Elapsed += WatchWindowExpired;
       _restWindowTimer.Elapsed += RestWindowExpired;
     }
-    public string Name => _configureThrottle.Server;
 
     public TokenInt PullToken(string client)
     {
@@ -52,7 +46,7 @@ namespace TokenGenLib.TokenRepos
       var token = GenerateToken((this as ITokenRepository).Name, client, tmpCounter);
       OnTokenIssued(token);
       if (tmpCounter > _configureThrottle.TotalLimit)
-        OnMaxTokenIssued(token, tmpCounter);
+        OnMaxTokenIssued(client, tmpCounter);
       return token;
     }
 
@@ -117,17 +111,6 @@ namespace TokenGenLib.TokenRepos
     }
 
     #endregion TimerFuncs
-
-    #region Events
-    void OnTokenIssued(TokenInt token)
-    {
-      AsyncEventsHelper.RaiseEventAsync(TokenIssued, this, new TokenIssuedEventArgs { Token = token.Id, Client = token.Client, Time = token.IssuedOn });
-    }
-    void OnMaxTokenIssued(TokenInt token, int counter)
-    {
-      AsyncEventsHelper.RaiseEventAsync(MaxTokenIssued, this, new MaxTokenIssuedEventArgs { Counts = counter, Client = token.Client, Time = token.IssuedOn });
-    }
-    #endregion Events
 
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls

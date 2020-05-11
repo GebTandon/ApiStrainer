@@ -11,7 +11,7 @@ namespace TokenGenLib.Internal
 
   public class StatsKeeper : IKeepStats, IDisposable
   {
-    private ITokenRepository _tokenRepo;
+    private readonly ITokenRepository _tokenRepo;
 
     public StatsKeeper(ITokenRepository tokenRepo)
     {
