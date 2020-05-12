@@ -3,19 +3,20 @@ using TokenGenLib.Internal;
 
 namespace TokenGenLib
 {
+
   public interface IGrantToken
   {
-    public IList<Token> Obtain(string client);
-    public void Release(string client, IList<string> tokenIds);
+    public Token Obtain(string client);
+    public void Release(string client, string tokenId);
   }
 
-  public class ApiGateway : IGrantToken
+  public class MultiTokenApiGateway : IGrantToken
   {
     private readonly IList<ITokenRepository> _tokenRepos;
-    private readonly ITokenRepository _iLimitRate;
-    private readonly ITokenRepository _iLimitWindow;
+    private readonly ITokenRepository _iLimitRate;//Only tokens obtained from RateLimit needs to be returned.
+    private readonly ITokenRepository _iLimitWindow;//Token needs to be issued, but not returned..
 
-    public ApiGateway(IList<ITokenRepository> tokenRepos)
+    public MultiTokenApiGateway(IList<ITokenRepository> tokenRepos)
     {
       _tokenRepos = tokenRepos;
       if (tokenRepos[0] is ILimitRate)
@@ -27,21 +28,17 @@ namespace TokenGenLib
       else
         _iLimitRate = tokenRepos[1];
     }
-    public IList<Token> Obtain(string client)
+
+    public Token Obtain(string client)
     {
-      var retVal = new List<Token>();
-      foreach (var tokenRepo in _tokenRepos)
-        retVal.Add((Token)tokenRepo.PullToken(client));
+      var retVal = (Token)_iLimitRate.PullToken(client);
+      _iLimitWindow.PullToken(client);
       return retVal;
     }
 
-    public void Release(string client, IList<string> tokenIds)
+    public void Release(string client, string tokenId)
     {
-      foreach (var tokenId in tokenIds)
-      {
-        foreach (var tokenrepo in _tokenRepos)
-          tokenrepo.ReturnToken(tokenId);
-      }
+      _iLimitRate.ReturnToken(tokenId);
     }
   }
 }

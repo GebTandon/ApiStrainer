@@ -16,7 +16,7 @@ namespace TokenGenLib.Internal
   public interface ILimitWindow { }
 
 
-  public class BaseTokenRepository
+  public abstract class BaseTokenRepository
   {
     protected IConfigureApiLimits _configureThrottle;
     public event EventHandler<TokenIssuedEventArgs> TokenIssued;

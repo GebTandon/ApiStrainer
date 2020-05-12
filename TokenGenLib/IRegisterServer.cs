@@ -25,7 +25,7 @@ namespace TokenGenLib
 
     public void Register(string apiName, ApiLimits limits)
     {
-      _services.AddTokenDependencies(apiName, limits.maxRateLimit, limits.restDuration, limits.watchDuration, limits.maxForDuration, limits.blocking);
+      _services.AddTokenDependencies(apiName, limits.MaxRateLimit, limits.RestDuration, limits.WatchDuration, limits.MaxForDuration, limits.Blocking);
     }
   }
 

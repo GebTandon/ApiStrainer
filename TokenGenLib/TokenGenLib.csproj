@@ -1,8 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>TokenGen.Lib</PackageId>
+    <Version>1.0.3</Version>
+    <DebugSymbols>true</DebugSymbols>
+    <PackageTags>Token RateLimit WindowLimit Api</PackageTags>
+    <Description>Package allows token generation across processes for API RateLimit and Window Limiting</Description>
   </PropertyGroup>
 
   <ItemGroup>

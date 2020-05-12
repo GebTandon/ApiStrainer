@@ -12,7 +12,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		ReadMe.md = ReadMe.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TokenGeneratorFixture", "TokenGeneratorFixture\TokenGeneratorFixture.csproj", "{22290467-308B-4F22-BE09-E1ED1CC01592}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenGeneratorFixture", "TokenGeneratorFixture\TokenGeneratorFixture.csproj", "{22290467-308B-4F22-BE09-E1ED1CC01592}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenDispenser", "TokenDispenser\TokenDispenser.csproj", "{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenDispenser.ClientLib", "TokenDispenser.Client\TokenDispenser.ClientLib.csproj", "{D9F88A6A-F32B-4973-8FA9-A806238AB101}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TokenGen.ConsoleApp", "TokenGen.ConsoleApp\TokenGen.ConsoleApp.csproj", "{81A9592D-233F-4861-BD88-14E85676503E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +34,18 @@ Global
 		{22290467-308B-4F22-BE09-E1ED1CC01592}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22290467-308B-4F22-BE09-E1ED1CC01592}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22290467-308B-4F22-BE09-E1ED1CC01592}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9F88A6A-F32B-4973-8FA9-A806238AB101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9F88A6A-F32B-4973-8FA9-A806238AB101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9F88A6A-F32B-4973-8FA9-A806238AB101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9F88A6A-F32B-4973-8FA9-A806238AB101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81A9592D-233F-4861-BD88-14E85676503E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81A9592D-233F-4861-BD88-14E85676503E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81A9592D-233F-4861-BD88-14E85676503E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81A9592D-233F-4861-BD88-14E85676503E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

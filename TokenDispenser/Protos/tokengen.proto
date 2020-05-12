@@ -1,0 +1,28 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "TokenDispenser.Protos";
+
+package tokengen;
+
+
+service TokenGen {
+  rpc Obtain (ObtainTokenRequest) returns (ObtainTokenReply);
+  rpc Release (ReleaseTokenRequest) returns (ReleaseTokenReply);
+}
+
+message ObtainTokenRequest {
+  string client = 1;
+}
+message ReleaseTokenRequest {
+  string tokenid = 1;
+  string clientid = 2;
+}
+
+message ObtainTokenReply {
+  string id = 1;
+  google.protobuf.Timestamp issuedon = 2;
+}
+
+message ReleaseTokenReply {
+}

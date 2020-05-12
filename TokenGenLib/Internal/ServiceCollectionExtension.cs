@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Extensions.DependencyInjection;
 using TokenGenLib.Internal;
 using TokenGenLib.TokenRepos;
@@ -23,7 +26,11 @@ namespace TokenGenLib.Services
         retVal.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, false);
         return retVal;
       });
-      services.AddSingleton<IKeepStats>();
+      //services.AddSingleton<IKeepStats>((services) =>
+      //{
+      //  var tokenServices = services.GetServices<ITokenRepository>() as IList<ITokenRepository>;
+      //  return new StatsKeeper(tokenServices);
+      //});
       if (maxRateLimit > 0)
         services.AddSingleton((services) =>
         {

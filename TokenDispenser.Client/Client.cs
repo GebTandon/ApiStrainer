@@ -1,40 +1,31 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
+using Grpc.Net.Client;
+using TokenDispenser.Protos;
 
-namespace TokenGenLib.Internal
+namespace TokenDispenser.ClientLib
 {
-
-  public interface IKeepStats
+  public class Client : IDisposable
   {
-    void UpdateStats(int tokensCount);
-    Stat Report(TimeSpan timeSpan);
-  }
+    private GrpcChannel _channel;
 
-  public class StatsKeeper : IKeepStats, IDisposable
-  {
-    private readonly IList<ITokenRepository> _tokenRepos;
-
-    public StatsKeeper(IList<ITokenRepository> tokenRepos)
+    public void Initialize(string address = "https://localhost:5001")
     {
-      _tokenRepos = tokenRepos;
-      //_tokenRepo.TokenIssued += UpdateStats; //Yatin: Need to fix this..
+      _channel = GrpcChannel.ForAddress(address);
     }
 
-    private void UpdateStats(object sender, TokenIssuedEventArgs e)
+    public async Task<ObtainTokenReply> ObtainToken(ObtainTokenRequest request)
     {
-      //Yatin: Update public statistics.
+      var client = new TokenGen.TokenGenClient(_channel);
+      var reply = await client.ObtainAsync(request);
+      return reply;
     }
 
-    public void UpdateStats(int tokensCount)
+    public async Task<ReleaseTokenReply> Release(ReleaseTokenRequest request)
     {
-      //Yatin: Not Used, may need to remove the method.
-    }
-
-
-    public Stat Report(TimeSpan timeSpan)
-    {
-      return new Stat();
+      var client = new TokenGen.TokenGenClient(_channel);
+      var reply = await client.ReleaseAsync(request);
+      return reply;
     }
 
     #region IDisposable Support
@@ -46,7 +37,7 @@ namespace TokenGenLib.Internal
       {
         if (disposing)
         {
-          //_tokenRepo.TokenIssued -= UpdateStats; //Yatin: Fix this too.
+          _channel.Dispose();
         }
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -57,7 +48,7 @@ namespace TokenGenLib.Internal
     }
 
     // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-    // ~StatsKeeper()
+    // ~Client()
     // {
     //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
     //   Dispose(false);
