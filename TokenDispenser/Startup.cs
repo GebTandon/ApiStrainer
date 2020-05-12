@@ -26,12 +26,14 @@ namespace TokenDispenser
       var tokenMonitor = new RegisterTokenMonitor(services);
       var sec = Configuration.GetSection("ApiLimitSetting");
       services.Configure<ApiLimitSetting>(sec);
-
+      
+      services.AddTransient<IGrantToken, SingleTokenApiGateway>();
+      //services.AddTransient<IGrantToken, MultiTokenApiGateway>();
       var limitSet = sec.Get<ApiLimitSetting>();
 
       tokenMonitor.Register(limitSet.ApiServer, new ApiLimits
       {
-        Blocking= limitSet.Blocking,
+        Blocking = limitSet.Blocking,
         MaxForDuration = limitSet.MaxForDuration,
         MaxRateLimit = limitSet.MaxRateLimit,
         RestDuration = limitSet.RestDuration,

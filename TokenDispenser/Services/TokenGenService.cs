@@ -24,7 +24,7 @@ namespace TokenDispenser.Services
       try
       {
         var token = _tokenGen.Obtain(request.Client);
-        return Task.FromResult(new ObtainTokenReply { Id = token.Id, Issuedon = Timestamp.FromDateTime(token.IssuedOn) });
+        return Task.FromResult(new ObtainTokenReply { Id = token.Id, Issuedon = Timestamp.FromDateTime(token.IssuedOn.ToUniversalTime()) });
       }
       catch (Exception ex)
       {

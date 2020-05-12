@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <PackageId>TokenGen.Lib</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <DebugSymbols>true</DebugSymbols>
     <PackageTags>Token RateLimit WindowLimit Api</PackageTags>
     <Description>Package allows token generation across processes for API RateLimit and Window Limiting</Description>

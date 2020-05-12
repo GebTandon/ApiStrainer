@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.28.0" />
-    <PackageReference Include="TokenGen.Lib" Version="1.0.3" />
+    <PackageReference Include="TokenGen.Lib" Version="1.0.4" />
     <PackageReference Include="TokenGenLib" Version="1.0.0" />
   </ItemGroup>
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using TokenGenLib.Services;
 
 namespace TokenGenLib
@@ -29,6 +30,7 @@ namespace TokenGenLib
     }
   }
 
+  [Obsolete("Not fully flushed out", true)]
   public interface IStartup
   {
     void Initialize();

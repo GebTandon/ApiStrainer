@@ -41,4 +41,27 @@ namespace TokenGenLib
       _iLimitRate.ReturnToken(tokenId);
     }
   }
+
+
+  public class SingleTokenApiGateway : IGrantToken
+  {
+    private readonly ITokenRepository _tokenRepo;
+
+    public SingleTokenApiGateway(ITokenRepository tokenRepo)
+    {
+      _tokenRepo = tokenRepo;
+    }
+
+    public Token Obtain(string client)
+    {
+      var retVal = (Token)_tokenRepo.PullToken(client);
+      _tokenRepo.PullToken(client);
+      return retVal;
+    }
+
+    public void Release(string client, string tokenId)
+    {
+      _tokenRepo.ReturnToken(tokenId);
+    }
+  }
 }
