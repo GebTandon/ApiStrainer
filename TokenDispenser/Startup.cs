@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -26,11 +27,8 @@ namespace TokenDispenser
       var tokenMonitor = new RegisterTokenMonitor(services);
       var sec = Configuration.GetSection("ApiLimitSetting");
       services.Configure<ApiLimitSetting>(sec);
-      
-      services.AddTransient<IGrantToken, SingleTokenApiGateway>();
-      //services.AddTransient<IGrantToken, MultiTokenApiGateway>();
-      var limitSet = sec.Get<ApiLimitSetting>();
 
+      var limitSet = sec.Get<ApiLimitSetting>();
       tokenMonitor.Register(limitSet.ApiServer, new ApiLimits
       {
         Blocking = limitSet.Blocking,
@@ -39,6 +37,13 @@ namespace TokenDispenser
         RestDuration = limitSet.RestDuration,
         WatchDuration = limitSet.WatchDuration
       });
+
+      if (limitSet.MaxForDuration > 0 && limitSet.MaxRateLimit > 0) //injects only 2 ITokenRepository
+        services.AddTransient<IGrantToken, MultiTokenApiGateway>();
+      else if (limitSet.MaxForDuration > 0 || limitSet.MaxRateLimit > 0) //injects only 1 ITokenRepository
+        services.AddTransient<IGrantToken, SingleTokenApiGateway>();
+      else
+        throw new InvalidOperationException("ITokenRepository cannot be determined, make sure configuration is valid to inject at least 1 ITokenRepository.");
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
