@@ -18,7 +18,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenDispenser", "TokenDisp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenDispenser.ClientLib", "TokenDispenser.Client\TokenDispenser.ClientLib.csproj", "{D9F88A6A-F32B-4973-8FA9-A806238AB101}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TokenGen.ConsoleApp", "TokenGen.ConsoleApp\TokenGen.ConsoleApp.csproj", "{81A9592D-233F-4861-BD88-14E85676503E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TokenGen.ConsoleApp", "TokenGen.ConsoleApp\TokenGen.ConsoleApp.csproj", "{81A9592D-233F-4861-BD88-14E85676503E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{3CD4FEF8-12F2-4738-B9FD-C041D05CCE87}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{5168B848-08B0-4CC2-B97B-85FD2E04AD5B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C86056ED-99EA-4814-A95B-40F8729B2AA8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +55,13 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7FDD56EE-2753-47F7-925F-A14CFC6A9F39} = {3CD4FEF8-12F2-4738-B9FD-C041D05CCE87}
+		{22290467-308B-4F22-BE09-E1ED1CC01592} = {C86056ED-99EA-4814-A95B-40F8729B2AA8}
+		{4A5124C2-A8FF-4C81-AC2C-48AF2CF9B2E5} = {3CD4FEF8-12F2-4738-B9FD-C041D05CCE87}
+		{D9F88A6A-F32B-4973-8FA9-A806238AB101} = {5168B848-08B0-4CC2-B97B-85FD2E04AD5B}
+		{81A9592D-233F-4861-BD88-14E85676503E} = {5168B848-08B0-4CC2-B97B-85FD2E04AD5B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3BD6CF5E-A57C-4F69-8C65-08CBC79A3998}
