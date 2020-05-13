@@ -19,15 +19,13 @@ namespace TokenGenLib.TokenRepos
     {
       _counter = 0;
       _open = true;
-      _watchWindowTimer = new Timer()
+      _watchWindowTimer = new Timer(_configureThrottle.WatchDuration.TotalMilliseconds)
       {
-        Interval = double.MinValue,
         AutoReset = false,
         Enabled = true,
       };
-      _restWindowTimer = new Timer()
+      _restWindowTimer = new Timer(_configureThrottle.RestDuration.TotalMilliseconds)
       {
-        Interval = double.MinValue,
         AutoReset = false,
         Enabled = true
       };
@@ -43,10 +41,13 @@ namespace TokenGenLib.TokenRepos
         tmpCounter = ++_counter;
       }
       StartWatchTimer();
+      if (tmpCounter > _configureThrottle.TotalLimit)
+      {
+        OnMaxTokenIssued(client, tmpCounter);
+        return null;
+      }
       var token = GenerateToken((this as ITokenRepository).Name, client, tmpCounter);
       OnTokenIssued(token);
-      if (tmpCounter > _configureThrottle.TotalLimit)
-        OnMaxTokenIssued(client, tmpCounter);
       return token;
     }
 
@@ -63,51 +64,47 @@ namespace TokenGenLib.TokenRepos
     #region TimerFuncs
     private void RestWindowExpired(object sender, ElapsedEventArgs e)
     {
-      _watchWindowTimer.Interval = double.MinValue;
-      _watchWindowTimer.Enabled = true;
-    }
-
-    private void WatchWindowExpired(object sender, ElapsedEventArgs e)
-    {
-      //Check the counts. if we are close, raise alarm, if we passed it stop the calls.
+      //since rest timer expired, get ready for next load...
       lock (_watchWindowTimer)
       {
         _counter = 0;//reset the counter.
       }
-      StartRestTimer();
+      //_watchWindowTimer.Interval = double.MinValue;
+      //_watchWindowTimer.Enabled = true;
+    }
+
+    private void WatchWindowExpired(object sender, ElapsedEventArgs e)
+    {
+      StartRestTimer();//begin cool down period.
     }
 
     private void StartWatchTimer()
     {
-      if (_watchWindowTimer.Interval <= 0.0)
-      {
-        _watchWindowTimer.Enabled = true;
-        _watchWindowTimer.Interval = _configureThrottle.WatchDuration.TotalSeconds;
+      if (!_watchWindowTimer.Enabled)
         _watchWindowTimer.Start();
-      }
     }
 
     private void StopWatchTimer()
     {
-      _watchWindowTimer.Stop();
-      _watchWindowTimer.Enabled = false;
-      _watchWindowTimer.Interval = double.MinValue;
+      if (_watchWindowTimer.Enabled)
+        _watchWindowTimer.Stop();
+      //_watchWindowTimer.Enabled = false;
+      //_watchWindowTimer.Interval = double.MinValue;
     }
 
     private void StartRestTimer()
     {
-      if (_restWindowTimer.Interval <= 0.0)
-      {
-        _restWindowTimer.Interval = _configureThrottle.RestDuration.TotalSeconds;
+      //_restWindowTimer.Interval = _configureThrottle.RestDuration.TotalSeconds;
+      if (!_restWindowTimer.Enabled)
         _restWindowTimer.Start();
-      }
     }
 
     private void StopRestTimer()
     {
-      _restWindowTimer.Stop();
-      _restWindowTimer.Enabled = false;
-      _restWindowTimer.Interval = double.MinValue;
+      if (_restWindowTimer.Enabled)
+        _restWindowTimer.Stop();
+      //_restWindowTimer.Enabled = false;
+      //_restWindowTimer.Interval = double.MinValue;
     }
 
     #endregion TimerFuncs
