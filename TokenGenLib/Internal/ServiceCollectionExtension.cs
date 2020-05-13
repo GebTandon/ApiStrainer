@@ -17,10 +17,10 @@ namespace TokenGenLib.Services
     }
     public static void AddTokenDependencies(this IServiceCollection services, string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue, bool blocking = false)
     {
-      services.AddSingleton((services) =>
+      services.AddSingleton<IConfigureApiLimits>((services) =>
       {
         var retVal = new ApiLimitsConfig() as IConfigureApiLimits;
-        retVal.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, false);
+        retVal.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, blocking);
         return retVal;
       });
       //services.AddSingleton<IKeepStats>((services) =>
@@ -29,7 +29,7 @@ namespace TokenGenLib.Services
       //  return new StatsKeeper(tokenServices);
       //});
       if (maxRateLimit > 0)
-        services.AddSingleton((services) =>
+        services.AddSingleton<ITokenRepository>((services) =>
         {
           var configService = services.GetRequiredService<IConfigureApiLimits>();
           var retVal = blocking
@@ -38,10 +38,10 @@ namespace TokenGenLib.Services
           return retVal;
         });
       if (maxForDuration > 0)
-        services.AddSingleton((services) =>
+        services.AddSingleton<ITokenRepository>((services) =>
         {
           var configService = services.GetRequiredService<IConfigureApiLimits>();
-          var retVal = new FixWindowTokenRepo(configService);
+          var retVal = new FixWindowTokenRepo(configService) as ITokenRepository;
           return retVal;
         });
     }

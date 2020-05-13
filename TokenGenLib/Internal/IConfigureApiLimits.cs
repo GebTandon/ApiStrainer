@@ -11,7 +11,7 @@ namespace TokenGenLib.Internal
     TimeSpan WatchDuration { get; }
     TimeSpan RestDuration { get; }
 
-    public void Setup(string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration, bool isSliding);
+    public void Setup(string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration, bool isBlocking);
   }
 
   public class ApiLimitsConfig : IConfigureApiLimits
@@ -21,7 +21,7 @@ namespace TokenGenLib.Internal
     private TimeSpan _watchDuration;
     private TimeSpan _restDuration;
     private int _maxTotalForDuration;
-    private bool _isSliding;
+    private bool _isBlocking;
 
     public string Server => _server;
     public TimeSpan WatchDuration => _watchDuration;
@@ -29,14 +29,14 @@ namespace TokenGenLib.Internal
     public int RateLimit => _rateLimit;
     public int TotalLimit => _maxTotalForDuration;
 
-    public void Setup(string server, int rateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration = int.MinValue, bool isSliding = false)
+    public void Setup(string server, int rateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration = int.MinValue, bool isBlocking = false)
     {
       _server = server;
       _rateLimit = rateLimit;
       _watchDuration = watchDuration;
       _restDuration = restDuration;
       _maxTotalForDuration = maxTotalForDuration;
-      _isSliding = isSliding;
+      _isBlocking = isBlocking;
 
       ValidateSetup();
     }

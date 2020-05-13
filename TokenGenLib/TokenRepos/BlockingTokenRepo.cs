@@ -7,7 +7,7 @@ namespace TokenGenLib.Internal
   public class BlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate, IDisposable
   {
     readonly BlockingCollection<TokenInt> _tokenCache;
-    const string constTokenId = "ThrowAwayToken";
+    const string constTokenId = "Do_ReturnThisToken";
 
     public BlockingTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
     {

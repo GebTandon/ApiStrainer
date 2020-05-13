@@ -4,26 +4,25 @@ using System.Linq;
 using System.Threading;
 using Moq;
 using TokenGenLib.Internal;
-using TokenGenLib.TokenRepos;
 using Xunit;
 
 namespace TokenGeneratorFixture
 {
-  public class FixWindowTokenRepoTests
+  public class BlockingTokenRepoTests
   {
     Mock<IConfigureApiLimits> _mockApiLimits = null;
-
+    const string constTokenId = "Do_ReturnThisToken";
     readonly ConcurrentBag<TokenIssuedEventArgs> _callbackTokensIssued = new ConcurrentBag<TokenIssuedEventArgs>();
     readonly ConcurrentBag<MaxTokenIssuedEventArgs> _callbackMaxTokensIssued = new ConcurrentBag<MaxTokenIssuedEventArgs>();
     readonly ConcurrentBag<TokenInt> _tokensIssued = new ConcurrentBag<TokenInt>();
 
     readonly string _clientName = "xUnitTest";
-    const string _serverName = "FixWindow Api";
+    const string _serverName = "Blocking Api";
 
     [Fact]
     public void ReturnsTokenForSingleRequest()
     {
-      var sut = CreateInstance(_serverName, 0, TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(2), 5, false);
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
       sut.TokenIssued += Sut_TokenIssued;
 
       var threadCount = 1;
@@ -44,7 +43,7 @@ namespace TokenGeneratorFixture
       Assert.Equal(_clientName, _callbackTokensIssued.First().Client);
       Assert.Equal(_serverName, token.Server);
       Assert.NotNull(token.Id);
-      Assert.Equal(string.Empty, token.Id);
+      Assert.Equal(constTokenId, token.Id);
 
       /* Time validation does not work, due to how threading works, unless we give large time gaps, 
        * at which point time check is irrelevant.
@@ -54,14 +53,14 @@ namespace TokenGeneratorFixture
     }
 
     [Fact]
-    public void ReturnsTokensAndRaisesTokenIssuedEventForRequestWithinWindowLimit()
+    public void ReturnsTokensAndRaisesTokenIssuedEventForRequestLessThanLimit()
     {
-      var sut = CreateInstance(_serverName, 0, TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(2), 5, false);
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
       sut.TokenIssued += Sut_TokenIssued;
       sut.MaxTokenIssued += Sut_MaxTokenIssued;
       var randomClientId = Guid.NewGuid().ToString();
 
-      var threadCount = 5;
+      var threadCount = 2;
       using (var countdownEvent = new CountdownEvent(threadCount))
       {
         for (var i = 0; i < threadCount; i++)
@@ -70,15 +69,15 @@ namespace TokenGeneratorFixture
         countdownEvent.Wait();
       }
 
-      Assert.Equal(5, _tokensIssued.Count);
+      Assert.Equal(2, _tokensIssued.Count);
       Assert.All(_tokensIssued, x => Assert.NotNull(x));
-      Assert.All(_tokensIssued, x => Assert.Equal(string.Empty, x.Id));
+      Assert.All(_tokensIssued, x => Assert.Equal(constTokenId, x.Id));
       Assert.All(_tokensIssued, x => Assert.Equal(_clientName, x.Client));
       Assert.All(_tokensIssued, x => Assert.Equal(_serverName, x.Server));
 
-      Assert.Equal(5, _callbackTokensIssued.Count);
+      Assert.Equal(2, _callbackTokensIssued.Count);
       Assert.All(_callbackTokensIssued, x => Assert.NotNull(x));
-
+      Assert.All(_callbackTokensIssued, x => Assert.Equal(constTokenId, x.Token));
       Assert.Empty(_callbackMaxTokensIssued);
 
     }
@@ -86,37 +85,39 @@ namespace TokenGeneratorFixture
     [Fact]
     public void ReturnsTokenUptoLimitAndThenRaisesMaxTokenIssuedEvent()
     {
-      var sut = CreateInstance(_serverName, 0, TimeSpan.FromMilliseconds(20), TimeSpan.FromMilliseconds(50), 5, false);
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
       sut.TokenIssued += Sut_TokenIssued;
       sut.MaxTokenIssued += Sut_MaxTokenIssued;
       var randomClientId = Guid.NewGuid().ToString();
 
-      var threadCount = 10;
+      var threadCount = 3;
       using (var countdownEvent = new CountdownEvent(threadCount))
       {
         for (var i = 0; i < threadCount; i++)
           ThreadPool.QueueUserWorkItem(new WaitCallback(PullToken_OnAThreadPool_Thread),
-            new ThreadFuncObj { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent, ExtApiCallDuration = TimeSpan.FromMilliseconds(500) });
+            new ThreadFuncObj { TokenRepo = sut, Tokens = _tokensIssued, SyncObj = countdownEvent, ExtApiCallDuration = TimeSpan.FromMilliseconds(200) });
         countdownEvent.Wait();
       }
 
-      Assert.Equal(10, _tokensIssued.Count);
-      Assert.True(_tokensIssued.Count(x => x != null) > 0); //a few tokens were issues
-      Assert.True(_tokensIssued.Count(x => x == null) > 0); //a few failed too.
+      Assert.Equal(3, _tokensIssued.Count);//3 token issue calls
+      Assert.Equal(3, _tokensIssued.Where(x => x != null).Count());
 
-      Assert.True(_callbackTokensIssued.Count > 0);
-      Assert.True(_callbackMaxTokensIssued.Count > 0);
+      Assert.Equal(3, _callbackTokensIssued.Count);
+      Assert.All(_callbackTokensIssued, x => Assert.NotNull(x));
+      Assert.All(_callbackTokensIssued, x => Assert.Equal(constTokenId, x.Token));
+
+      Assert.Empty(_callbackMaxTokensIssued);//the calls will not fail, but they will block..
     }
 
     [Fact]
-    public void MultipleCallsBeyondWindowFailAndRaiseTokenIssuedAndMaxTokenIssuedEvents()
+    public void MultipleCallsUptoLimitWorkAndIssuesTokenIssuedEvent()
     {
-      var sut = CreateInstance(_serverName, 0, TimeSpan.FromMilliseconds(20), TimeSpan.FromMilliseconds(100), 5, false);
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
       sut.TokenIssued += Sut_TokenIssued;
       sut.MaxTokenIssued += Sut_MaxTokenIssued;
       var randomClientId = Guid.NewGuid().ToString();
 
-      var threadCount1 = 20;
+      var threadCount1 = 2;
       using (var countdownEvent1 = new CountdownEvent(threadCount1))
       {
         for (var i = 0; i < threadCount1; i++)
@@ -126,12 +127,12 @@ namespace TokenGeneratorFixture
               TokenRepo = sut,
               Tokens = _tokensIssued,
               SyncObj = countdownEvent1,
-              ExtApiCallDuration = TimeSpan.FromMilliseconds(400)
+              ExtApiCallDuration = TimeSpan.FromMilliseconds(200)
             });
         countdownEvent1.Wait();
       }
 
-      var threadCount2 = 10;
+      var threadCount2 = 2;
       using (var countdownEvent2 = new CountdownEvent(threadCount2))
       {
         for (var i = 0; i < threadCount2; i++)
@@ -146,25 +147,25 @@ namespace TokenGeneratorFixture
         countdownEvent2.Wait();
       }
 
-      var tokenIssuedEventCount = _callbackTokensIssued.Count;
-      var maxTokenIssuedEventCount = _callbackMaxTokensIssued.Count;
-      Assert.True(_tokensIssued.Count == 20 + 10);//30 token-issue calls were made
-      Assert.True(_tokensIssued.Count(x => x != null) > 0); //a few tokens were issues
-      Assert.True(_tokensIssued.Count(x => x == null) > 0); //a few failed too.
-      Assert.Equal(20 + 10, maxTokenIssuedEventCount + tokenIssuedEventCount);
-      Assert.True(tokenIssuedEventCount < 20 + 10);
-      Assert.True(maxTokenIssuedEventCount > 0);
+      Assert.Equal(4, _tokensIssued.Count);
+      Assert.All(_tokensIssued, (x) => Assert.NotNull(x));
+
+      Assert.Equal(4, _callbackTokensIssued.Count);
+      Assert.All(_callbackTokensIssued, (x) => Assert.NotNull(x));
+      Assert.All(_callbackTokensIssued, x => Assert.Equal(constTokenId, x.Token));
+
+      Assert.Empty(_callbackMaxTokensIssued);//the calls will not fail, but they will block..
     }
 
-    [Fact]
-    public void MultipleCallsBeyondWindowFailAndRaiseTokenIssuedAndMaxTokenIssuedEvents_RestTimeDoesResetCounts()
+    [Fact(Skip ="Not needed")]
+    public void CallsOverLimitWorkAndIssuesTokenIssuedAndMaxTokenIssuedEvent()
     {
-      var sut = CreateInstance(_serverName, 0, TimeSpan.FromMilliseconds(20), TimeSpan.FromMilliseconds(100), 5, false);
+      var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
       sut.TokenIssued += Sut_TokenIssued;
       sut.MaxTokenIssued += Sut_MaxTokenIssued;
       var randomClientId = Guid.NewGuid().ToString();
 
-      var threadCount1 = 20;
+      var threadCount1 = 3;
       using (var countdownEvent1 = new CountdownEvent(threadCount1))
       {
         for (var i = 0; i < threadCount1; i++)
@@ -174,17 +175,12 @@ namespace TokenGeneratorFixture
               TokenRepo = sut,
               Tokens = _tokensIssued,
               SyncObj = countdownEvent1,
-              ExtApiCallDuration = TimeSpan.FromMilliseconds(400)
+              ExtApiCallDuration = TimeSpan.FromMilliseconds(500)
             });
         countdownEvent1.Wait();
       }
-      var b4_tokensIssuedCalls = _tokensIssued.Count;
-      var b4_tokensIssuedSuccessfully = _tokensIssued.Count(x => x != null);
-      var b4_tokenIssuedEventCount = _callbackTokensIssued.Count;
-      var b4_maxTokenIssuedEventCount = _callbackMaxTokensIssued.Count;
 
-      Thread.Sleep(TimeSpan.FromMilliseconds(20 + 100));//wait for one cycle
-      var threadCount2 = 5;
+      var threadCount2 = 2;
       using (var countdownEvent2 = new CountdownEvent(threadCount2))
       {
         for (var i = 0; i < threadCount2; i++)
@@ -199,19 +195,17 @@ namespace TokenGeneratorFixture
         countdownEvent2.Wait();
       }
 
-      var a8_tokensIssuedCalls = _tokensIssued.Count - b4_tokensIssuedCalls;
-      var a8_tokensIssuedSuccessfully = _tokensIssued.Count(x => x != null) - b4_tokensIssuedSuccessfully;
-      var a8_tokenIssuedEventCount = _callbackTokensIssued.Count - b4_tokenIssuedEventCount;
-      var a8_maxTokenIssuedEventCount = _callbackMaxTokensIssued.Count - b4_maxTokenIssuedEventCount;
+      Assert.Equal(5, _tokensIssued.Count);
+      Assert.Single(_tokensIssued.Where(x => x == null));
 
-      Assert.True(b4_tokensIssuedCalls == 20);//20 calls issued before..
-      Assert.True(_tokensIssued.Count(x => x != null) > 0);//few success
-      Assert.True(_tokensIssued.Count(x => x == null) > 0);//few failed
-      Assert.Equal(20, b4_tokenIssuedEventCount + b4_maxTokenIssuedEventCount);
-      Assert.True(b4_tokenIssuedEventCount < 20);
-      Assert.True(b4_maxTokenIssuedEventCount > 0);
+      Assert.Equal(4, _callbackTokensIssued.Count);
+      Assert.All(_callbackTokensIssued, (x) => Assert.NotNull(x));
+      var token1 = _tokensIssued.First(x => x != null);
+      var token4 = _tokensIssued.Last(x => x != null);
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token1.Id)));
+      Assert.Single(_callbackTokensIssued.Where(x => x.Token.Equals(token4.Id)));
 
-      Assert.Equal(5, a8_tokensIssuedSuccessfully);//shows that the 2set of 5 calls, none were failures, since the timers were reset.
+      Assert.Single(_callbackMaxTokensIssued);
     }
 
     private void PullToken_OnAThreadPool_Thread(object sutNTokenBagObj)
@@ -246,17 +240,8 @@ namespace TokenGeneratorFixture
       _mockApiLimits.SetupGet(c => c.WatchDuration).Returns(watchDuration);
       _mockApiLimits.SetupGet(c => c.TotalLimit).Returns(maxTotal);
 
-      var sut = new FixWindowTokenRepo(_mockApiLimits.Object);
+      var sut = new BlockingTokenRepo(_mockApiLimits.Object);
       return sut;
     }
   }
-
-  //internal class ThreadFuncObj
-  //{
-  //  internal ITokenRepository TokenRepo { get; set; }
-  //  internal ConcurrentBag<TokenInt> Tokens { get; set; }
-  //  internal CountdownEvent SyncObj { get; set; }
-  //  internal TimeSpan ExtApiCallDuration { get; set; }//Yatin: If tests fail randomly on build server, increase this time in tests... The thread scheduler may be busy.. Taking long time to schedule threadpool threads.
-  //}
-
 }
