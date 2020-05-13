@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TokenDispenser.ClientLib" Version="1.0.0" />
+    <ProjectReference Include="..\TokenDispenser.Client\TokenDispenser.ClientLib.csproj" />
   </ItemGroup>
 
 </Project>

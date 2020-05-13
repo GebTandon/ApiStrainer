@@ -37,7 +37,7 @@ namespace TokenDispenser
         RestDuration = limitSet.RestDuration,
         WatchDuration = limitSet.WatchDuration
       });
-
+      Console.WriteLine($"Starting Token Server to Monitor {limitSet.ApiServer}");
       if (limitSet.MaxForDuration > 0 && limitSet.MaxRateLimit > 0) //injects only 2 ITokenRepository
         services.AddTransient<IGrantToken, MultiTokenApiGateway>();
       else if (limitSet.MaxForDuration > 0 || limitSet.MaxRateLimit > 0) //injects only 1 ITokenRepository

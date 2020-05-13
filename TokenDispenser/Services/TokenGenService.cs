@@ -24,6 +24,7 @@ namespace TokenDispenser.Services
       try
       {
         var token = _tokenGen.Obtain(request.Client);
+        Console.WriteLine($"Generated Token:- Id:{token.Id} IssuedOn:{token.IssuedOn.ToLongTimeString()} Client:{request.Client}");
         return Task.FromResult(new ObtainTokenReply { Id = token.Id, Issuedon = Timestamp.FromDateTime(token.IssuedOn.ToUniversalTime()) });
       }
       catch (Exception ex)
@@ -38,8 +39,8 @@ namespace TokenDispenser.Services
       try
       {
         _tokenGen.Release(request.Clientid, request.Tokenid);
+        Console.WriteLine($"Release token for Client: {request.Clientid} TokenId:{request.Tokenid}");
         return Task.FromResult(new ReleaseTokenReply());
-
       }
       catch (Exception ex)
       {
