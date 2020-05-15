@@ -256,7 +256,7 @@ namespace TokenGeneratorFixture
   //  internal ITokenRepository TokenRepo { get; set; }
   //  internal ConcurrentBag<TokenInt> Tokens { get; set; }
   //  internal CountdownEvent SyncObj { get; set; }
-  //  internal TimeSpan ExtApiCallDuration { get; set; }//Yatin: If tests fail randomly on build server, increase this time in tests... The thread scheduler may be busy.. Taking long time to schedule threadpool threads.
+  //  internal TimeSpan ExtApiCallDuration { get; set; }// Yatin: If tests fail randomly on build server, increase this time in tests... The thread scheduler may be busy.. Taking long time to schedule threadpool threads.
   //}
 
 }

@@ -43,7 +43,7 @@ namespace TokenGenLib.Internal
 
     private void ValidateSetup()
     {
-      //Yatin: Validate the setup values are correct.
+      // Yatin: Validate the setup values are correct.
     }
   }
 }

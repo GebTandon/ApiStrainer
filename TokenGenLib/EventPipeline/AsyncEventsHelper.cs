@@ -30,7 +30,7 @@ namespace TokenGenLib.Internal
       }
       catch (Exception ex)
       {
-        //Yatin: Keep quiet
+        // Yatin: Keep quiet
         //throw;
       }
     }

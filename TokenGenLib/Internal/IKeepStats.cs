@@ -12,22 +12,22 @@ namespace TokenGenLib.Internal
 
   public class StatsKeeper : IKeepStats, IDisposable
   {
-    private readonly IList<ITokenRepository> _tokenRepos;
+    private readonly IList<ITokenRepository> _tokenRepos; // Yatin: this will fail if we inject only one ITokenRepository, so think of using IActivator to get services instead of constructor injection.
 
     public StatsKeeper(IList<ITokenRepository> tokenRepos)
     {
       _tokenRepos = tokenRepos;
-      //_tokenRepo.TokenIssued += UpdateStats; //Yatin: Need to fix this..
+      //_tokenRepo.TokenIssued += UpdateStats; // Yatin: Need to fix this..
     }
 
     private void UpdateStats(object sender, TokenIssuedEventArgs e)
     {
-      //Yatin: Update public statistics.
+      // Yatin: Update public statistics.
     }
 
     public void UpdateStats(int tokensCount)
     {
-      //Yatin: Not Used, may need to remove the method.
+      // Yatin: Not Used, may need to remove the method.
     }
 
 
@@ -45,7 +45,7 @@ namespace TokenGenLib.Internal
       {
         if (disposing)
         {
-          //_tokenRepo.TokenIssued -= UpdateStats; //Yatin: Fix this too.
+          //_tokenRepo.TokenIssued -= UpdateStats; // Yatin: Fix this too.
         }
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
