@@ -3,6 +3,11 @@ using System.Collections.Concurrent;
 
 namespace TokenGenLib.Internal
 {
+  /// <summary>
+  /// // Yatin:
+  /// The benefit of using this approach over just a SemphoreSlim is that the code cannot be foolled by over-retruning tokens.
+  /// We can validate that the tokens are valid and were not returned earlier in following approach.
+  /// </summary>
   public class NonBlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate
   {
     readonly ConcurrentDictionary<string, TokenInt> _tokenCache;
