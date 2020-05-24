@@ -6,6 +6,7 @@ namespace TokenGenLib
 {
   public interface IRegisterServer
   {
+    string RegisteredServer { get; }
     void Register(string apiName, ApiLimits limits);
     void Deregister(string apiName);
   }
@@ -13,20 +14,23 @@ namespace TokenGenLib
   public class RegisterTokenMonitor : IRegisterServer
   {
     private readonly IServiceCollection _services;
-
+    string _registeredServer = "";
     public RegisterTokenMonitor(IServiceCollection services)
     {
       _services = services;
     }
 
+    public string RegisteredServer => _registeredServer;
+
     public void Deregister(string apiName)
     {
-
+      _registeredServer = string.Empty;
     }
 
     public void Register(string apiName, ApiLimits limits)
     {
-      _services.AddTokenDependencies(apiName, limits.MaxRateLimit, limits.RestDuration, limits.WatchDuration, limits.MaxForDuration, limits.Blocking);
+      _registeredServer = apiName;
+      _services.AddTokenRepository(apiName, limits.MaxRateLimit, limits.RestDuration, limits.WatchDuration, limits.MaxForDuration, limits.Blocking);
     }
   }
 

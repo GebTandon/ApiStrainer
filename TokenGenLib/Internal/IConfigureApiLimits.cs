@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 
 namespace TokenGenLib.Internal
 {
@@ -43,7 +44,9 @@ namespace TokenGenLib.Internal
 
     private void ValidateSetup()
     {
-      // Yatin: Validate the setup values are correct.
+      if (string.IsNullOrWhiteSpace(_server)) throw new DataException("Server name cannot be null or empty..");
+      if (_rateLimit < 0 && _maxTotalForDuration < 0) throw new DataException("Either Ratelimit or MaxTotal should be positive value.");
+      if(_maxTotalForDuration>0 && _watchDuration.Ticks<=0) throw new DataException("Either watch duration cannot be negative.");
     }
   }
 }

@@ -7,43 +7,47 @@ namespace TokenGenLib.Services
 {
   public static class ServiceCollectionExtension
   {
-    public static void AddRateLimitTokenDependency(this IServiceCollection services, string server, int maxRateLimit, bool blocking = false)
+    public static void AddRateLimitTokenRepository(this IServiceCollection services, string server, int maxRateLimit, bool blocking = false)
     {
-      AddTokenDependencies(services, server, maxRateLimit, TimeSpan.Zero, TimeSpan.Zero, int.MinValue, blocking);
+      AddTokenRepository(services, server, maxRateLimit, TimeSpan.Zero, TimeSpan.Zero, int.MinValue, blocking);
     }
-    public static void AddWindowLimitTokenDependency(this IServiceCollection services, string server, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue)
+    public static void AddWindowLimitTokenRepository(this IServiceCollection services, string server, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue)
     {
-      AddTokenDependencies(services, server, int.MinValue, restDuration, watchDuration, maxForDuration, false);
+      AddTokenRepository(services, server, int.MinValue, restDuration, watchDuration, maxForDuration, false);
     }
-    public static void AddTokenDependencies(this IServiceCollection services, string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue, bool blocking = false)
+    public static void AddTokenRepository(this IServiceCollection services, string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue, bool blocking = false)
     {
-      services.AddSingleton<IConfigureApiLimits>((services) =>
-      {
-        var retVal = new ApiLimitsConfig() as IConfigureApiLimits;
-        retVal.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, blocking);
-        return retVal;
-      });
-      //services.AddSingleton<IKeepStats>((services) =>
+
+      //An entity should not be a service that is injected.. it should simply be instantiated and used....
+      //services.AddSingleton<IConfigureApiLimits>((services) =>
       //{
-      //  var tokenServices = services.GetServices<ITokenRepository>() as IList<ITokenRepository>;
-      //  return new StatsKeeper(tokenServices);
+      //  var retVal = new ApiLimitsConfig() as IConfigureApiLimits;
+      //  retVal.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, blocking);
+      //  return retVal;
       //});
+      var apiLimitsConfig = new ApiLimitsConfig();
+      apiLimitsConfig.Setup(server, maxRateLimit, restDuration, watchDuration, maxForDuration, blocking);
+
       if (maxRateLimit > 0)
         services.AddSingleton<ITokenRepository>((services) =>
         {
-          var configService = services.GetRequiredService<IConfigureApiLimits>();
           var retVal = blocking
-              ? new BlockingTokenRepo(configService) as ITokenRepository
-              : new NonBlockingTokenRepo(configService) as ITokenRepository;
+              ? new BlockingTokenRepo(apiLimitsConfig) as ITokenRepository
+              : new NonBlockingTokenRepo(apiLimitsConfig) as ITokenRepository;
           return retVal;
         });
       if (maxForDuration > 0)
         services.AddSingleton<ITokenRepository>((services) =>
         {
-          var configService = services.GetRequiredService<IConfigureApiLimits>();
-          var retVal = new FixWindowTokenRepo(configService) as ITokenRepository;
+          var retVal = new FixWindowTokenRepo(apiLimitsConfig) as ITokenRepository;
           return retVal;
         });
+      if (maxForDuration > 0 && maxRateLimit > 0) //injects only 2 ITokenRepository
+        services.AddTransient<IGrantToken, MultiTokenApiGateway>();
+      else if (maxForDuration > 0 || maxRateLimit > 0) //injects only 1 ITokenRepository
+        services.AddTransient<IGrantToken, SingleTokenApiGateway>();
+      else
+        throw new InvalidOperationException("ITokenRepository cannot be determined, make sure configuration is valid to inject at least 1 ITokenRepository.");
     }
   }
 }

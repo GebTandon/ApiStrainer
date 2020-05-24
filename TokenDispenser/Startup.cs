@@ -24,10 +24,24 @@ namespace TokenDispenser
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddGrpc();
+      services.Configure<ApiLimitSetting>((icfg) =>
+      {//default settings.
+        icfg.ApiServer = "Api Server";
+        icfg.MaxRateLimit = 100;
+        icfg.Blocking = false;
+        icfg.RestDuration = TimeSpan.FromSeconds(-1);
+        icfg.WatchDuration = TimeSpan.FromSeconds(-1);
+        icfg.MaxForDuration = 0;
+      });
       var tokenMonitor = new RegisterTokenMonitor(services);
-      var sec = Configuration.GetSection("ApiLimitSetting");
-      services.Configure<ApiLimitSetting>(sec);
+      ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "ApiLimitSetting");
+      //ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "XXXSettings"); //Yatin: Register more Api Servers as needed, encouraged only if using the TokenGenLib as Inprocess monitor.
+    }
 
+    private void ConfigureTokenMonitorFromConfigName(IServiceCollection services, RegisterTokenMonitor tokenMonitor, string appSettingsSectionName)
+    {
+      var sec = Configuration.GetSection(appSettingsSectionName);
+      services.Configure<ApiLimitSetting>(sec);
       var limitSet = sec.Get<ApiLimitSetting>();
       tokenMonitor.Register(limitSet.ApiServer, new ApiLimits
       {
@@ -37,13 +51,7 @@ namespace TokenDispenser
         RestDuration = limitSet.RestDuration,
         WatchDuration = limitSet.WatchDuration
       });
-      Console.WriteLine($"Starting Token Server to Monitor {limitSet.ApiServer}");
-      if (limitSet.MaxForDuration > 0 && limitSet.MaxRateLimit > 0) //injects only 2 ITokenRepository
-        services.AddTransient<IGrantToken, MultiTokenApiGateway>();
-      else if (limitSet.MaxForDuration > 0 || limitSet.MaxRateLimit > 0) //injects only 1 ITokenRepository
-        services.AddTransient<IGrantToken, SingleTokenApiGateway>();
-      else
-        throw new InvalidOperationException("ITokenRepository cannot be determined, make sure configuration is valid to inject at least 1 ITokenRepository.");
+      Console.WriteLine($"Registered Token Server to Monitor {limitSet.ApiServer}");
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -60,10 +68,7 @@ namespace TokenDispenser
       {
         endpoints.MapGrpcService<TokenGenService>();
 
-        endpoints.MapGet("/", async context =>
-              {
-                await context.Response.WriteAsync("Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
-              });
+        endpoints.MapGet("/", async context => await context.Response.WriteAsync("Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909"));
       });
     }
   }
