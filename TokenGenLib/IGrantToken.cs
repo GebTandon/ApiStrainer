@@ -9,6 +9,7 @@ namespace TokenGenLib
 
   public interface IGrantToken
   {
+    public string ServerName { get; }
     public Token Obtain(string client);
     public void Release(string client, string tokenId);
   }
@@ -18,6 +19,9 @@ namespace TokenGenLib
     private readonly ITokenRepository _iLimitRate;//Only tokens obtained from RateLimit needs to be returned.
     private readonly ITokenRepository _iLimitWindow;//Token needs to be issued, but not returned..
     private ApiLimitsConfig _apiLimitsConfig;
+
+    public string ServerName => _apiLimitsConfig.Server;
+
     [Obsolete("No Di needed, since it encapsulates the tokenRepo creation, it not a shared service...", true)]
     public MultiTokenApiGateway(IList<ITokenRepository> tokenRepos)
     {
@@ -57,6 +61,8 @@ namespace TokenGenLib
   {
     private readonly ITokenRepository _tokenRepo;
     private ApiLimitsConfig _apiLimitsConfig;
+    public string ServerName => _apiLimitsConfig.Server;
+
     [Obsolete("No Di needed, since it encapsulates the tokenRepo creation, it not a shared service...", true)]
     public SingleTokenApiGateway(ITokenRepository tokenRepo)
     {
@@ -68,8 +74,8 @@ namespace TokenGenLib
       if (apiLimitsConfig.TotalLimit > 0)
         _tokenRepo = new FixWindowTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<FixWindowTokenRepo>());
       else
-        _tokenRepo = apiLimitsConfig.IsBlocking 
-          ? new BlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<BlockingTokenRepo>()) as ITokenRepository 
+        _tokenRepo = apiLimitsConfig.IsBlocking
+          ? new BlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<BlockingTokenRepo>()) as ITokenRepository
           : new NonBlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<NonBlockingTokenRepo>()) as ITokenRepository;
     }
 

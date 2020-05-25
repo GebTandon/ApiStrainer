@@ -16,6 +16,7 @@ namespace TokenGenLib.Services
     {
       AddTokenRepositoryV2(services, server, int.MinValue, restDuration, watchDuration, maxForDuration, false);
     }
+
     [Obsolete("ITokenRepository is not a service exposed for general public, hence its encapsulated by IGrantToken implementations.", true)]
     public static void AddTokenRepository(this IServiceCollection services, string server, int maxRateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxForDuration = int.MinValue, bool blocking = false)
     {
