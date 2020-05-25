@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace TokenGenLib.Internal
 {
@@ -10,10 +11,12 @@ namespace TokenGenLib.Internal
   /// </summary>
   public class NonBlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate
   {
+    private readonly ILogger<NonBlockingTokenRepo> _logger;
     readonly ConcurrentDictionary<string, TokenInt> _tokenCache;
 
-    public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
+    public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle, ILogger<NonBlockingTokenRepo> logger) : base(configureThrottle)
     {
+      _logger = logger;
       _tokenCache = new ConcurrentDictionary<string, TokenInt>(1, configureThrottle.RateLimit);// Yatin: possible error here , as the Remove operation can be done on multiple threads !! Might have to change 1 to a number = maxLimit
     }
 
@@ -29,6 +32,7 @@ namespace TokenGenLib.Internal
           OnTokenIssued(token);
           return token;
         }
+        _logger?.LogWarning($"Hit Token Rate Limits for Server: {_configureThrottle.Server} Limit:{_configureThrottle.RateLimit}");
         OnMaxTokenIssued(client, _configureThrottle.RateLimit);
         return null;
       }
@@ -41,7 +45,7 @@ namespace TokenGenLib.Internal
 
       if (!_tokenCache.TryRemove(tokenId, out TokenInt existingValue))
       {
-        //_logger?.LogWarning($"Looks like the token {token.Id} for client {token.Client} was already removed !!");
+        //_logger?.LogWarning($"The token {tokenId} for server {_configureThrottle.Server} was already removed !!");
       }
     }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Timers;
+using Microsoft.Extensions.Logging;
 using TokenGenLib.Internal;
 using Timer = System.Timers.Timer;
 
@@ -14,11 +15,13 @@ namespace TokenGenLib.TokenRepos
     private readonly Timer _watchWindowTimer;
     private readonly Timer _restWindowTimer;
     private readonly bool _open;
+    private readonly ILogger<FixWindowTokenRepo> _logger;
 
-    public FixWindowTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
+    public FixWindowTokenRepo(IConfigureApiLimits configureThrottle, ILogger<FixWindowTokenRepo> logger) : base(configureThrottle)
     {
       _counter = 0;
       _open = true;
+      _logger = logger;
       _watchWindowTimer = new Timer(_configureThrottle.WatchDuration.TotalMilliseconds)
       {
         AutoReset = false,
@@ -43,6 +46,7 @@ namespace TokenGenLib.TokenRepos
       StartWatchTimer();
       if (tmpCounter > _configureThrottle.TotalLimit)
       {
+        _logger?.LogWarning($"Hit Token Window Limits for Server: {_configureThrottle.Server} Limit:{_configureThrottle.TotalLimit}");
         OnMaxTokenIssued(client, tmpCounter);
         return null;
       }
@@ -75,11 +79,13 @@ namespace TokenGenLib.TokenRepos
 
     private void WatchWindowExpired(object sender, ElapsedEventArgs e)
     {
+      _logger?.LogInformation($"    ++Watch timer expired for Server: {_configureThrottle.Server}");
       StartRestTimer();//begin cool down period.
     }
 
     private void StartWatchTimer()
     {
+      _logger?.LogInformation($"    ++Starting watch timer for Server: {_configureThrottle.Server}");
       if (!_watchWindowTimer.Enabled)
         _watchWindowTimer.Start();
     }
@@ -94,6 +100,7 @@ namespace TokenGenLib.TokenRepos
 
     private void StartRestTimer()
     {
+      _logger?.LogInformation($"    ++Starting rest timer for Server: {_configureThrottle.Server}");
       //_restWindowTimer.Interval = _configureThrottle.RestDuration.TotalSeconds;
       if (!_restWindowTimer.Enabled)
         _restWindowTimer.Start();
@@ -101,6 +108,7 @@ namespace TokenGenLib.TokenRepos
 
     private void StopRestTimer()
     {
+      _logger?.LogInformation($"    ++Rest timer expired for Server: {_configureThrottle.Server}");
       if (_restWindowTimer.Enabled)
         _restWindowTimer.Stop();
       //_restWindowTimer.Enabled = false;

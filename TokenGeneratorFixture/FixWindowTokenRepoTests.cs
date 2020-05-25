@@ -245,8 +245,9 @@ namespace TokenGeneratorFixture
       _mockApiLimits.SetupGet(c => c.RestDuration).Returns(restDuration);
       _mockApiLimits.SetupGet(c => c.WatchDuration).Returns(watchDuration);
       _mockApiLimits.SetupGet(c => c.TotalLimit).Returns(maxTotal);
-
-      var sut = new FixWindowTokenRepo(_mockApiLimits.Object);
+      //var mockLogger = new Mock<ILogger<FixWindowTokenRepo>>();
+      var mockLogger = new TestLoggerT<FixWindowTokenRepo>();
+      var sut = new FixWindowTokenRepo(_mockApiLimits.Object, mockLogger);
       return sut;
     }
   }

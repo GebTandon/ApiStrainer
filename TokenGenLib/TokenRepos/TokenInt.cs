@@ -17,7 +17,10 @@ namespace TokenGenLib.Internal
   {
     public static explicit operator Token(TokenInt tokenInt)
     {
+      if (tokenInt == null) return (Token)NullToken;
       return new Token { Id = tokenInt.Id, IssuedOn = tokenInt.IssuedOn };
     }
+
+    private static TokenInt NullToken = new TokenInt { Client = string.Empty, Id = string.Empty, IssuedOn = DateTime.MinValue, Server = string.Empty };
   }
 }

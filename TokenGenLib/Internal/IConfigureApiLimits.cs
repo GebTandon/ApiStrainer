@@ -29,6 +29,7 @@ namespace TokenGenLib.Internal
     public TimeSpan RestDuration => _restDuration;
     public int RateLimit => _rateLimit;
     public int TotalLimit => _maxTotalForDuration;
+    public bool IsBlocking => _isBlocking;
 
     public void Setup(string server, int rateLimit, TimeSpan restDuration, TimeSpan watchDuration, int maxTotalForDuration = int.MinValue, bool isBlocking = false)
     {

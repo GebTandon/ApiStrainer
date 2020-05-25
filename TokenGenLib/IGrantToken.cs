@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using TokenGenLib.Internal;
+using TokenGenLib.TokenRepos;
 
 namespace TokenGenLib
 {
@@ -12,13 +15,14 @@ namespace TokenGenLib
 
   public class MultiTokenApiGateway : IGrantToken
   {
-    private readonly IList<ITokenRepository> _tokenRepos;
     private readonly ITokenRepository _iLimitRate;//Only tokens obtained from RateLimit needs to be returned.
     private readonly ITokenRepository _iLimitWindow;//Token needs to be issued, but not returned..
-
+    private ApiLimitsConfig _apiLimitsConfig;
+    [Obsolete("No Di needed, since it encapsulates the tokenRepo creation, it not a shared service...", true)]
     public MultiTokenApiGateway(IList<ITokenRepository> tokenRepos)
     {
-      _tokenRepos = tokenRepos;
+      if (tokenRepos.Count < 2) return; //Something is wrong.. we should have got 2 ITokenRepository...
+
       if (tokenRepos[0] is ILimitRate)
         _iLimitRate = tokenRepos[0];
       else
@@ -27,6 +31,14 @@ namespace TokenGenLib
         _iLimitWindow = tokenRepos[1];
       else
         _iLimitRate = tokenRepos[1];
+    }
+    public MultiTokenApiGateway(ApiLimitsConfig apiLimitsConfig, ILoggerFactory loggerFactory)
+    {
+      _apiLimitsConfig = apiLimitsConfig;
+      _iLimitRate = apiLimitsConfig.IsBlocking
+        ? new BlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<BlockingTokenRepo>()) as ITokenRepository
+        : new NonBlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<NonBlockingTokenRepo>()) as ITokenRepository;
+      _iLimitWindow = new FixWindowTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<FixWindowTokenRepo>()) as ITokenRepository;
     }
 
     public Token Obtain(string client)
@@ -41,21 +53,29 @@ namespace TokenGenLib
       _iLimitRate.ReturnToken(tokenId);
     }
   }
-
-
   public class SingleTokenApiGateway : IGrantToken
   {
     private readonly ITokenRepository _tokenRepo;
-
+    private ApiLimitsConfig _apiLimitsConfig;
+    [Obsolete("No Di needed, since it encapsulates the tokenRepo creation, it not a shared service...", true)]
     public SingleTokenApiGateway(ITokenRepository tokenRepo)
     {
       _tokenRepo = tokenRepo;
+    }
+    public SingleTokenApiGateway(ApiLimitsConfig apiLimitsConfig, ILoggerFactory loggerFactory)
+    {
+      _apiLimitsConfig = apiLimitsConfig;
+      if (apiLimitsConfig.TotalLimit > 0)
+        _tokenRepo = new FixWindowTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<FixWindowTokenRepo>());
+      else
+        _tokenRepo = apiLimitsConfig.IsBlocking 
+          ? new BlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<BlockingTokenRepo>()) as ITokenRepository 
+          : new NonBlockingTokenRepo(apiLimitsConfig, loggerFactory.CreateLogger<NonBlockingTokenRepo>()) as ITokenRepository;
     }
 
     public Token Obtain(string client)
     {
       var retVal = (Token)_tokenRepo.PullToken(client);
-      _tokenRepo.PullToken(client);
       return retVal;
     }
 

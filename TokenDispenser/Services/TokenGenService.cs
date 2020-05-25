@@ -24,12 +24,13 @@ namespace TokenDispenser.Services
       try
       {
         var token = _tokenGen.Obtain(request.Client);
-        Console.WriteLine($"Generated Token:- Id:{token.Id} IssuedOn:{token.IssuedOn.ToLongTimeString()} Client:{request.Client}");
-        return Task.FromResult(new ObtainTokenReply { Id = token.Id, Issuedon = Timestamp.FromDateTime(token.IssuedOn.ToUniversalTime()) });
+        //Console.WriteLine($"Generated Token:- Id:{token.Id} IssuedOn:{token.IssuedOn.ToLongTimeString()} Client:{request.Client}");
+        _logger?.LogInformation($"Generated Token:- Id:{token?.Id} IssuedOn:{token?.IssuedOn.ToLongTimeString()} Client:{request.Client}");
+        return Task.FromResult(new ObtainTokenReply { Id = token?.Id, Issuedon = Timestamp.FromDateTime(token?.IssuedOn.ToUniversalTime()??DateTime.MinValue) });
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Exception obtaining token client:{request.Client}");
+        _logger?.LogError(ex, $"Exception obtaining token client:{request.Client}");
         throw;
       }
     }
@@ -39,12 +40,13 @@ namespace TokenDispenser.Services
       try
       {
         _tokenGen.Release(request.Clientid, request.Tokenid);
-        Console.WriteLine($"Release token for Client: {request.Clientid} TokenId:{request.Tokenid}");
+        //Console.WriteLine($"Release token for Client: {request.Clientid} TokenId:{request.Tokenid}");
+        _logger?.LogInformation($"Release token for Client: {request.Clientid} TokenId:{request.Tokenid}");
         return Task.FromResult(new ReleaseTokenReply());
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Exception releasing token for client:{request.Clientid}, token:{request.Tokenid}");
+        _logger?.LogError(ex, $"Exception releasing token for client:{request.Clientid}, token:{request.Tokenid}");
         throw;
       }
     }

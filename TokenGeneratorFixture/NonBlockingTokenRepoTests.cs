@@ -249,8 +249,9 @@ namespace TokenGeneratorFixture
       _mockApiLimits.SetupGet(c => c.RestDuration).Returns(restDuration);
       _mockApiLimits.SetupGet(c => c.WatchDuration).Returns(watchDuration);
       _mockApiLimits.SetupGet(c => c.TotalLimit).Returns(maxTotal);
-
-      var sut = new NonBlockingTokenRepo(_mockApiLimits.Object);
+      //var mockLogger = new Mock<ILogger<NonBlockingTokenRepo>>();
+      var mockLogger = new TestLoggerT<NonBlockingTokenRepo>();
+      var sut = new NonBlockingTokenRepo(_mockApiLimits.Object, mockLogger);
       return sut;
     }
   }

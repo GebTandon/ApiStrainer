@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace TokenGenLib.Internal
 {
 
   public class BlockingTokenRepo : BaseTokenRepository, ITokenRepository, ILimitRate, IDisposable
   {
+    private readonly ILogger<BlockingTokenRepo> _logger;
     readonly BlockingCollection<TokenInt> _tokenCache;
     const string constTokenId = "Do_ReturnThisToken";
 
-    public BlockingTokenRepo(IConfigureApiLimits configureThrottle) : base(configureThrottle)
+    public BlockingTokenRepo(IConfigureApiLimits configureThrottle, ILogger<BlockingTokenRepo> logger) : base(configureThrottle)
     {
+      _logger = logger;
       _tokenCache = new BlockingCollection<TokenInt>(_configureThrottle.RateLimit);// Yatin: possible error here , as the Remove operation can be done on multiple threads !!
     }
 

@@ -30,7 +30,7 @@ namespace TokenGenLib
     public void Register(string apiName, ApiLimits limits)
     {
       _registeredServer = apiName;
-      _services.AddTokenRepository(apiName, limits.MaxRateLimit, limits.RestDuration, limits.WatchDuration, limits.MaxForDuration, limits.Blocking);
+      _services.AddTokenRepositoryV2(apiName, limits.MaxRateLimit, limits.RestDuration, limits.WatchDuration, limits.MaxForDuration, limits.Blocking);
     }
   }
 

@@ -27,7 +27,7 @@ namespace TokenDispenser
       services.Configure<ApiLimitSetting>((icfg) =>
       {//default settings.
         icfg.ApiServer = "Api Server";
-        icfg.MaxRateLimit = 100;
+        icfg.MaxRateLimit = 1;
         icfg.Blocking = false;
         icfg.RestDuration = TimeSpan.FromSeconds(-1);
         icfg.WatchDuration = TimeSpan.FromSeconds(-1);

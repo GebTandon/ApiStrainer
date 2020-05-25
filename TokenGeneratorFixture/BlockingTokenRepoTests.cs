@@ -157,7 +157,7 @@ namespace TokenGeneratorFixture
       Assert.Empty(_callbackMaxTokensIssued);//the calls will not fail, but they will block..
     }
 
-    [Fact(Skip ="Not needed")]
+    [Fact(Skip = "Not needed")]
     public void CallsOverLimitWorkAndIssuesTokenIssuedAndMaxTokenIssuedEvent()
     {
       var sut = CreateInstance(_serverName, 2, TimeSpan.MinValue, TimeSpan.MinValue, -1, true);
@@ -239,8 +239,9 @@ namespace TokenGeneratorFixture
       _mockApiLimits.SetupGet(c => c.RestDuration).Returns(restDuration);
       _mockApiLimits.SetupGet(c => c.WatchDuration).Returns(watchDuration);
       _mockApiLimits.SetupGet(c => c.TotalLimit).Returns(maxTotal);
-
-      var sut = new BlockingTokenRepo(_mockApiLimits.Object);
+      //var mockLogger = new Mock<ILogger<BlockingTokenRepo>>();
+      var mockLogger = new TestLoggerT<BlockingTokenRepo>();
+      var sut = new BlockingTokenRepo(_mockApiLimits.Object, mockLogger);
       return sut;
     }
   }
