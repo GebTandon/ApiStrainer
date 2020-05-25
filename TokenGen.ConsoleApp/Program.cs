@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using TokenGen.ConsoleApp.Plumbing;
 using TokenGen.ConsoleApp.Settings;
 using TokenGenLib;
 
@@ -14,7 +16,8 @@ namespace TokenGen.ConsoleApp
   {
     public static void Main(string[] args)
     {
-      CreateHostBuilder(args).Build().Run();
+      var iHost = CreateHostBuilder(args).Build();
+      iHost.Run();
     }
 
     // Additional configuration is required to successfully run gRPC on macOS.
@@ -76,11 +79,29 @@ namespace TokenGen.ConsoleApp
                     icfg.MaxForDuration = 0;
                   });
                   var tokenMonitor = new RegisterTokenMonitor(services);
-                  ConfigureTokenMonitorFromConfigName(services, configuration, tokenMonitor, "ApiLimitSetting");
-                  //ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "XXXSettings"); //Yatin: Register more Api Servers as needed, encouraged only if using the TokenGenLib as Inprocess monitor.
+                  //InProcess multi server tracking..
+                  ConfigureTokenMonitorFromConfigName(services, configuration, tokenMonitor, "Server1Limits");
+                  ConfigureTokenMonitorFromConfigName(services, configuration, tokenMonitor, "Server2Limits");
+                  RegisterTokenMonitorRetrieverFunctionFactory(services);
+
+                  services.AddHostedService<LifetimeEventsHostedService>();//add lifetime listener so we can hook our application process in here...
+                  services.AddSingleton<IApiCaller, ApiCallerService1>();
+                  services.AddSingleton<IApiCaller, ApiCallerService2>();
                 })
                 ;
       return hostBuilder;
+    }
+
+    private static void RegisterTokenMonitorRetrieverFunctionFactory(IServiceCollection services)
+    {
+      services.AddSingleton<Func<string, IGrantToken>>((srvs) =>
+      {
+        return new Func<string, IGrantToken>(srvrName =>
+        {
+          var retVal = srvs.GetServices<IGrantToken>().FirstOrDefault(x => x.ServerName.Equals(srvrName, StringComparison.InvariantCultureIgnoreCase));
+          return retVal;
+        });
+      });
     }
 
     private static void ConfigureTokenMonitorFromConfigName(IServiceCollection services, IConfiguration configuration, RegisterTokenMonitor tokenMonitor, string appSettingsSectionName)

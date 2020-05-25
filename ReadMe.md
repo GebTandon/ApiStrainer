@@ -4,7 +4,8 @@
 - Use Fody for Aspect Weaving around Flurl, WebClient and such high level API Call objects.
 - Create another ITokenRepo implementation that uses sliding window concept.
 - The projects have hard references, instead of Nuget package reference among themselves.
-- THe 'TokenGen.ConsoleApp' project is the example of how a client can utilize the services.
+- The 'TokenGen.ConsoleApp' project is the example of how inprocess clients can utilize the service. 
+- The 'TokenDispenser.ClientLib.ConsoleApp' project is the example of how out of process clients can utilize the service.
 - The 'TokenDispnser' is the gRPC server that issues tokens and protects the target APIs from rate/ call overloading.
 - The IKeepStats implementation needs some rethinking, so that 
   - it can keep separate counts based on whether the event source is ILimitRate or ILimitWindow
@@ -19,9 +20,10 @@
   - Keeps track of the APIs, tracks Instantaneous API call counts and Total counts within a time frame.
 - The tracking of APIs can be done in process as well as out of process.
   - InProcess - add reference to the TokenGenLib directly in the project
+    - See TokenGen.ConsoleApp project, it uses multiple inprocess Api tracking code.
     - To track only one API server, use RegisterTokenMonitor.Register calls with that server name.
     - To Track multiple API servers, call RegisterTokenMonitor.Register multiple times for each server tracked.
-  - Out of Process - Run the TockenDispenser instance, and the TockenDispenser.ClientLib library.
+  - Out of Process - Run the TockenDispenser instance, and the TokenDispenser.ClientLib.ConsoleApp library.
     - To track one server, instantiate only one TockenDispenser server.
     - To track multiple servers, instantiate multiple of such servers.
 - 

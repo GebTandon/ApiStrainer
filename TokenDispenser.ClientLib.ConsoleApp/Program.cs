@@ -35,6 +35,7 @@ namespace TokenGen.ConsoleApp
         listOfTokenTasks.Add(Task.Run(async () =>
         {
           ObtainTokenReply obtainTokenReply = await clnt.ObtainToken(new ObtainTokenRequest { Client = clientName });
+          Console.WriteLine($"Received Token {obtainTokenReply.Id} for client {clientName}");
           await Task.Delay(simulatedApiDurationInMillSecs).ConfigureAwait(false);//emulate calling a WebApi.
           return obtainTokenReply;
         }));
@@ -48,7 +49,6 @@ namespace TokenGen.ConsoleApp
       var listReleaseTasks = new List<Task<ReleaseTokenReply>>();
       foreach (ObtainTokenReply item in result)
       {
-        Console.WriteLine($"Received Token {item.Id} for client {clientName}");
         listReleaseTasks.Add(Task.Run(async () => await clnt.Release(new ReleaseTokenRequest { Clientid = clientName, Tokenid = item.Id })));
       }
       var releaseResults = await Task.WhenAll(listReleaseTasks).ConfigureAwait(false);
