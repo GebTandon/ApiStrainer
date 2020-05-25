@@ -73,8 +73,7 @@ namespace TokenGenLib.TokenRepos
       {
         _counter = 0;//reset the counter.
       }
-      //_watchWindowTimer.Interval = double.MinValue;
-      //_watchWindowTimer.Enabled = true;
+      StartWatchTimer();
     }
 
     private void WatchWindowExpired(object sender, ElapsedEventArgs e)
@@ -86,33 +85,30 @@ namespace TokenGenLib.TokenRepos
     private void StartWatchTimer()
     {
       _logger?.LogInformation($"    ++Starting watch timer for Server: {_configureThrottle.Server}");
-      if (!_watchWindowTimer.Enabled)
+      //if (!_watchWindowTimer.Enabled)
         _watchWindowTimer.Start();
     }
 
     private void StopWatchTimer()
     {
-      if (_watchWindowTimer.Enabled)
+      _logger?.LogInformation($"    ++Watch timer expired for Server: {_configureThrottle.Server}");
+      //if (_watchWindowTimer.Enabled)
         _watchWindowTimer.Stop();
-      //_watchWindowTimer.Enabled = false;
-      //_watchWindowTimer.Interval = double.MinValue;
     }
 
     private void StartRestTimer()
     {
       _logger?.LogInformation($"    ++Starting rest timer for Server: {_configureThrottle.Server}");
       //_restWindowTimer.Interval = _configureThrottle.RestDuration.TotalSeconds;
-      if (!_restWindowTimer.Enabled)
+      //if (!_restWindowTimer.Enabled)
         _restWindowTimer.Start();
     }
 
     private void StopRestTimer()
     {
       _logger?.LogInformation($"    ++Rest timer expired for Server: {_configureThrottle.Server}");
-      if (_restWindowTimer.Enabled)
+      //if (_restWindowTimer.Enabled)
         _restWindowTimer.Stop();
-      //_restWindowTimer.Enabled = false;
-      //_restWindowTimer.Interval = double.MinValue;
     }
 
     #endregion TimerFuncs
