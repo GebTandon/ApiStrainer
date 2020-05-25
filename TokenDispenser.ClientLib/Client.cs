@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
+
 using Grpc.Net.Client;
+
 using TokenDispenser.Protos;
 
 namespace TokenDispenser.ClientLib

@@ -1,59 +1,103 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading;
-using System.Threading.Tasks;
-using TokenDispenser.ClientLib;
-using TokenDispenser.Protos;
+using System;
+using System.IO;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using TokenGen.ConsoleApp.Settings;
+using TokenGenLib;
 
 namespace TokenGen.ConsoleApp
 {
-  static class Program
+  public class Program
   {
-    const int nmberOfCalls = 20;
-    const int simulatedApiDurationInMillSecs = 10;
-    const string clientName = "Console Test App";
-
-    static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
-      var clnt = new Client();
-      clnt.Initialize();
-      var result = await CallExternalApiInParallelAsync(clnt);
-
-      Thread.Sleep(TimeSpan.FromSeconds(10));
-
-      await ReleaseTokensAsync(clnt, result);
-
-      Console.WriteLine("Press return to exit program...");
-      Console.ReadLine();
+      CreateHostBuilder(args).Build().Run();
     }
 
-    private static async Task<ObtainTokenReply[]> CallExternalApiInParallelAsync(Client clnt)
+    // Additional configuration is required to successfully run gRPC on macOS.
+    // For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
+    public static IHostBuilder CreateHostBuilder(string[] args)
     {
-      var listOfTokenTasks = new List<Task<ObtainTokenReply>>();
-      for (var i = 0; i < nmberOfCalls; i++)
+      var hostBuilder = new HostBuilder()
+                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseEnvironment("Development")
+                .ConfigureHostConfiguration(cfgBldr =>
+                {
+                  cfgBldr.SetBasePath(Directory.GetCurrentDirectory())
+                  .AddJsonFile("hostsettings.json", optional: true)
+                  .AddEnvironmentVariables(prefix: "PREFIX_")
+                  .AddCommandLine(args);
+                })
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                  config.SetBasePath(Directory.GetCurrentDirectory());
+                  var env = hostingContext.HostingEnvironment.EnvironmentName;
+                  config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                  config.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
+                  config.AddEnvironmentVariables("CSL_");
+                  config.AddCommandLine(args);
+                })
+                .ConfigureLogging((hostingContext, logging) =>
+                {
+                  logging.ClearProviders();
+                  logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                  logging.AddDebug(); //On Linux, this writes to /var/log/message.
+                  //logging.AddEventSourceLogger();
+                  //logging.AddEventLog();  //works only on windows deployments.
+                  //                        //Add filters for logging through code, (besides in the config file).
+                  logging.AddConsole(options => options.IncludeScopes = true);// enable scope in code.
+                  logging.AddFilter("System", LogLevel.Debug)
+                    .AddFilter<ConsoleLoggerProvider>("Microsoft", LogLevel.Trace)
+                    .AddFilter((provider, category, logLevel) =>
+                    { //an example of filter function..
+                      return provider != "Microsoft.Extensions.Logging.Console.ConsoleLoggerProvider" ||
+                          category != "TodoApiSample.Controllers.TodoController";
+                    });
+                  logging.SetMinimumLevel(LogLevel.Trace);
+                })
+                .UseDefaultServiceProvider(serviceProviderOptions =>
+                {
+                  serviceProviderOptions.ValidateScopes = true;
+                  serviceProviderOptions.ValidateOnBuild = true;
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                  var configuration = hostContext.Configuration;
+                  services.Configure<ApiLimitSetting>((icfg) =>
+                  {//default settings.
+                    icfg.ApiServer = "Api Server";
+                    icfg.MaxRateLimit = 1;
+                    icfg.Blocking = false;
+                    icfg.RestDuration = TimeSpan.FromSeconds(-1);
+                    icfg.WatchDuration = TimeSpan.FromSeconds(-1);
+                    icfg.MaxForDuration = 0;
+                  });
+                  var tokenMonitor = new RegisterTokenMonitor(services);
+                  ConfigureTokenMonitorFromConfigName(services, configuration, tokenMonitor, "ApiLimitSetting");
+                  //ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "XXXSettings"); //Yatin: Register more Api Servers as needed, encouraged only if using the TokenGenLib as Inprocess monitor.
+                })
+                ;
+      return hostBuilder;
+    }
+
+    private static void ConfigureTokenMonitorFromConfigName(IServiceCollection services, IConfiguration configuration, RegisterTokenMonitor tokenMonitor, string appSettingsSectionName)
+    {
+      var sec = configuration.GetSection(appSettingsSectionName);
+      services.Configure<ApiLimitSetting>(sec);
+      var limitSet = sec.Get<ApiLimitSetting>();
+      tokenMonitor.Register(limitSet.ApiServer, new ApiLimits
       {
-        listOfTokenTasks.Add(Task.Run(async () =>
-        {
-          ObtainTokenReply obtainTokenReply = await clnt.ObtainToken(new ObtainTokenRequest { Client = clientName });
-          await Task.Delay(simulatedApiDurationInMillSecs).ConfigureAwait(false);//emulate calling a WebApi.
-          return obtainTokenReply;
-        }));
-      }
-      var result = await Task.WhenAll(listOfTokenTasks).ConfigureAwait(false);
-      return result;
+        Blocking = limitSet.Blocking,
+        MaxForDuration = limitSet.MaxForDuration,
+        MaxRateLimit = limitSet.MaxRateLimit,
+        RestDuration = limitSet.RestDuration,
+        WatchDuration = limitSet.WatchDuration
+      });
+      Console.WriteLine($"Registered Token Server to Monitor {limitSet.ApiServer}");
     }
 
-    private static async Task ReleaseTokensAsync(Client clnt, IEnumerable<ObtainTokenReply> result)
-    {
-      var listReleaseTasks = new List<Task<ReleaseTokenReply>>();
-      foreach (ObtainTokenReply item in result)
-      {
-        Console.WriteLine($"Received Token {item.Id} for client {clientName}");
-        listReleaseTasks.Add(Task.Run(async () => await clnt.Release(new ReleaseTokenRequest { Clientid = clientName, Tokenid = item.Id })));
-      }
-      var releaseResults = await Task.WhenAll(listReleaseTasks).ConfigureAwait(false);
-      Console.WriteLine($"Released tokens...");
-    }
   }
 }
