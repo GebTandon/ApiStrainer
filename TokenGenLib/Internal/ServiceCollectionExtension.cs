@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TokenGenLib.Fody;
 using TokenGenLib.Internal;
 using TokenGenLib.TokenRepos;
 
@@ -75,6 +76,8 @@ namespace TokenGenLib.Services
         });
       else
         throw new InvalidOperationException("ITokenRepository cannot be determined, make sure configuration is valid to inject at least 1 ITokenRepository.");
+
+      ServiceActivator.Configure(sp);//Only for using Fody Attributes
     }
   }
 }

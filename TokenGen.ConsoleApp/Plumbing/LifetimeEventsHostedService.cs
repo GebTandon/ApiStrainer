@@ -15,17 +15,19 @@ namespace TokenGen.ConsoleApp.Plumbing
     private readonly ILogger _logger;
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly IList<IApiCaller> _apiCallers;
+    private IUseFody _useFody;
 
-    public LifetimeEventsHostedService(ILogger<LifetimeEventsHostedService> logger, IHostApplicationLifetime appLifetime, IServiceProvider serviceProvider)
+    public LifetimeEventsHostedService(ILogger<LifetimeEventsHostedService> logger, IHostApplicationLifetime appLifetime, IServiceProvider serviceProvider, IUseFody useFody)
     {
       _logger = logger;
       _appLifetime = appLifetime;
       _apiCallers = new List<IApiCaller>();
       var iapiServices = serviceProvider.GetServices<IApiCaller>(); //Since we are injecting multiple types derived from same interface, this is the way to get instances right.
-      var apiCaller1 = iapiServices.First(x=>x.GetType()==typeof(ApiCallerService1)) as IApiCaller;
-      var apiCaller2 = iapiServices.First(x=>x.GetType()==typeof(ApiCallerService2)) as IApiCaller;
+      var apiCaller1 = iapiServices.First(x => x.GetType() == typeof(ApiCallerService1)) as IApiCaller;
+      var apiCaller2 = iapiServices.First(x => x.GetType() == typeof(ApiCallerService2)) as IApiCaller;
       _apiCallers.Add(apiCaller1);
       _apiCallers.Add(apiCaller2);
+      _useFody = useFody;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -46,8 +48,13 @@ namespace TokenGen.ConsoleApp.Plumbing
     {
       _logger.LogInformation("OnStarted has been called.");
 
-      // Perform post-startup activities here
-      Parallel.ForEach(_apiCallers, async (apiCaller) => await apiCaller.DoWhatEverWithApiAsync().ConfigureAwait(false));
+      _useFody.CallAWebApiAsync();
+      _useFody.CallAWebApi();
+
+      /*    // Yatin: Commented to test Fody
+            // Perform post-startup activities here
+            Parallel.ForEach(_apiCallers, async (apiCaller) => await apiCaller.DoWhatEverWithApiAsync().ConfigureAwait(false));
+      */
     }
 
     private void OnStopping()

@@ -87,6 +87,9 @@ namespace TokenGen.ConsoleApp
                   services.AddHostedService<LifetimeEventsHostedService>();//add lifetime listener so we can hook our application process in here...
                   services.AddSingleton<IApiCaller, ApiCallerService1>();
                   services.AddSingleton<IApiCaller, ApiCallerService2>();
+
+                  //Fody testing..
+                  services.AddSingleton<IUseFody, FodyAttributeDemo>();
                 })
                 ;
       return hostBuilder;
