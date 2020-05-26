@@ -5,10 +5,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using TokenGen.ConsoleApp.Plumbing;
 using TokenGen.ConsoleApp.Settings;
 using TokenGenLib;
+using TokenGenLib.Fody;
+
+[module: ApiCallTracker] //Register this Fody Extended Attribute.
 
 namespace TokenGen.ConsoleApp
 {
@@ -48,18 +50,7 @@ namespace TokenGen.ConsoleApp
                   logging.ClearProviders();
                   logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
                   logging.AddDebug(); //On Linux, this writes to /var/log/message.
-                  //logging.AddEventSourceLogger();
-                  //logging.AddEventLog();  //works only on windows deployments.
-                  //                        //Add filters for logging through code, (besides in the config file).
                   logging.AddConsole(options => options.IncludeScopes = true);// enable scope in code.
-                  logging.AddFilter("System", LogLevel.Debug)
-                    .AddFilter<ConsoleLoggerProvider>("Microsoft", LogLevel.Trace)
-                    .AddFilter((provider, category, logLevel) =>
-                    { //an example of filter function..
-                      return provider != "Microsoft.Extensions.Logging.Console.ConsoleLoggerProvider" ||
-                          category != "TodoApiSample.Controllers.TodoController";
-                    });
-                  logging.SetMinimumLevel(LogLevel.Trace);
                 })
                 .UseDefaultServiceProvider(serviceProviderOptions =>
                 {

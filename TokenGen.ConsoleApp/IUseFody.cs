@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using TokenGenLib;
+using TokenGenLib.Fody;
 
 namespace TokenGen.ConsoleApp
 {
@@ -14,6 +11,7 @@ namespace TokenGen.ConsoleApp
     public void CallAWebApi();
   }
 
+  //Web API calling simulation using ApiCallTrackerAttribute....
   public class FodyAttributeDemo : IUseFody
   {
     private ILogger<FodyAttributeDemo> _logger;
@@ -23,16 +21,18 @@ namespace TokenGen.ConsoleApp
       _logger = logger;
     }
 
-    [EmbeddedTokenRepo(ClientName = "EmbeddedApiClient", ServerName = "EmbeddedServer")]
+    [ApiCallTracker(ClientName = "EmbeddedApiClient", ServerName = "EmbeddedServer")]
     public void CallAWebApi()
     {
       _logger.LogInformation($"Executing method {nameof(FodyAttributeDemo)}.{nameof(CallAWebApi)}");
+      Task.Delay(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
     }
 
-    [EmbeddedTokenRepo(ClientName = "EmbeddedApiClient", ServerName = "EmbeddedServer")]
+    [ApiCallTracker(ClientName = "EmbeddedApiClient", ServerName = "EmbeddedServer")]
     public async Task CallAWebApiAsync()
     {
-      await Task.CompletedTask;
+      _logger.LogInformation($"Executing method {nameof(FodyAttributeDemo)}.{nameof(CallAWebApiAsync)}");
+      await Task.Delay(TimeSpan.FromSeconds(10));
     }
   }
 }

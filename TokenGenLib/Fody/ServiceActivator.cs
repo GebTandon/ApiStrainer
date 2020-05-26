@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace TokenGenLib.Fody
 {
   //https://www.davidezoccarato.cloud/resolving-instances-with-asp-net-core-di-in-static-classes/
-  public class ServiceActivator
+  public static class ServiceActivator
   {
     internal static IServiceProvider _serviceProvider = null;
 

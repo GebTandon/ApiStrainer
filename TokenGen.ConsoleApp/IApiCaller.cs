@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TokenGenLib;
 
 namespace TokenGen.ConsoleApp
 {
+  // Yatin: Example of how to hand wire the calls to tokenrepo during embedded mode.
   public interface IApiCaller
   {
     public Task DoWhatEverWithApiAsync();
