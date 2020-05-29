@@ -22,6 +22,9 @@
   - Remote TokenGen
     - Allow different servers to expose diff ports.
     - Allow clients to connect at those diff ports.
+- Attribute for remote server too.
+- What is there is no DI
+- What if client wants to use different DI container.
 
 ## How to Use ##
 - The TokeGenLib is the library that is core of the project.

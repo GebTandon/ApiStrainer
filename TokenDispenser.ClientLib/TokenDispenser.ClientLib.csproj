@@ -10,6 +10,7 @@
     <DebugSymbols>true</DebugSymbols>
     <PackageTags>TokenGen gRpc Client Library</PackageTags>
     <Description>gRpc client library for the Server hosting the Token Gen library.</Description>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

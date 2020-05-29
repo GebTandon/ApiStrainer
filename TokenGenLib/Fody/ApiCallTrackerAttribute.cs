@@ -4,10 +4,8 @@ using System.Reflection;
 using MethodDecorator.Fody.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TokenGenLib.Fody;
 
-[module: ApiCallTracker] //Register this Fody Extended Attribute.
-
+//refer assemblyinfo class for registration of the attribute.
 namespace TokenGenLib.Fody
 {
   //https://weekly-geekly.github.io/articles/263511/index.html
@@ -63,7 +61,7 @@ namespace TokenGenLib.Fody
         _logger = serviceScope?.ServiceProvider?.GetService<ILoggerFactory>()?.CreateLogger<ApiCallTrackerAttribute>();
         //_logger?.LogInformation($"Leaving method:{_method} with Args:{string.Join(",", _args)}");
         var igrantToken = serviceScope?.ServiceProvider?.GetServices<IGrantToken>()?.FirstOrDefault(x => x.ServerName.Equals(ServerName, StringComparison.InvariantCultureIgnoreCase));
-        igrantToken?.Release(ClientName, _token.Id);
+        igrantToken?.Release(ClientName, _token?.Id);
       }
       catch (Exception e)
       {
