@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 using Grpc.Net.Client;
@@ -14,6 +15,11 @@ namespace TokenDispenser.ClientLib
     public void Initialize(string address = "https://localhost:5001")
     {
       _channel = GrpcChannel.ForAddress(address);
+    }
+
+    public void Initialize(HttpClient client, string address = "https://localhost:5001")
+    {
+      _channel = GrpcChannel.ForAddress(address, new GrpcChannelOptions { HttpClient = client });
     }
 
     public async Task<ObtainTokenReply> ObtainToken(ObtainTokenRequest request)

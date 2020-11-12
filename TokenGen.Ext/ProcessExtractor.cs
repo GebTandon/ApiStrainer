@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
+using TokenGenLib;
 
 namespace TokenGen.Ext
 {
   public static class ProcessExtractor
   {
     static string _processName = "";
-    static object lockObj = new object();
+    static readonly Token lockObj = new Token();
 
     public static string ProcessName()
     {
