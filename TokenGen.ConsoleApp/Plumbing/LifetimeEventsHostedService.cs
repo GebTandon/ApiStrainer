@@ -50,7 +50,7 @@ namespace TokenGen.ConsoleApp.Plumbing
       _useFody.CallAWebApiAsync();
       _useFody.CallAWebApi();
 
-      /*    // Yatin: Commented to test Fody
+      /*    // GTan: Commented to test Fody
             // Perform post-startup activities here
             Parallel.ForEach(_apiCallers, async (apiCaller) => await apiCaller.DoWhatEverWithApiAsync().ConfigureAwait(false));
       */

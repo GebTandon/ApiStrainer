@@ -15,6 +15,7 @@
 - Add Integration tests for the client project.
 - Currently in all these implementations, there is possibility that users can make mistakes in typing servername or client names in different ways.
   - Mistake naming service with different names will be disastrous as the counters will not match and may allow more calls then allowed.
+
 - Improvements needed:
   - Embedded TokenGen
     - Add attributes to Flurl or WebClient where we can automatically get the domain name and set it as servername
@@ -23,7 +24,7 @@
     - Allow different servers to expose diff ports.
     - Allow clients to connect at those diff ports.
 - Attribute for remote server too.
-- What is there is no DI
+- What if there is no DI
 - What if client wants to use different DI container.
 
 ## How to Use ##

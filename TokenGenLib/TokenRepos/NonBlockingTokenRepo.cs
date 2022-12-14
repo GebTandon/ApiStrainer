@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace TokenGenLib.Internal
 {
   /// <summary>
-  /// // Yatin:
+  /// // GTan:
   /// The benefit of using this approach over just a SemphoreSlim is that the code cannot be foolled by over-retruning tokens.
   /// We can validate that the tokens are valid and were not returned earlier in following approach.
   /// </summary>
@@ -17,7 +17,7 @@ namespace TokenGenLib.Internal
     public NonBlockingTokenRepo(IConfigureApiLimits configureThrottle, ILogger<NonBlockingTokenRepo> logger) : base(configureThrottle)
     {
       _logger = logger;
-      _tokenCache = new ConcurrentDictionary<string, TokenInt>(1, configureThrottle.RateLimit);// Yatin: possible error here , as the Remove operation can be done on multiple threads !! Might have to change 1 to a number = maxLimit
+      _tokenCache = new ConcurrentDictionary<string, TokenInt>(1, configureThrottle.RateLimit);// GTan: possible error here , as the Remove operation can be done on multiple threads !! Might have to change 1 to a number = maxLimit
     }
 
     public TokenInt PullToken(string client)

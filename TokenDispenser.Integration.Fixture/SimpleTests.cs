@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 
 using TokenDispenser.ClientLib;
-using clientProto = TokenDispenser.Protos.ObtainTokenRequest;
+//using clientProto = TokenDispenser.Protos.ObtainTokenRequest;
 using Xunit;
 
 namespace TokenDispenser.Integration.Fixture

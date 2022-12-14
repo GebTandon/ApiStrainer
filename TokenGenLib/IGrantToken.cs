@@ -48,7 +48,7 @@ namespace TokenGenLib
     public Token Obtain(string client)
     {
       var rateLimitToken = (Token)_iLimitRate.PullToken(client);
-      _iLimitWindow.PullToken(client); // Yatin: this token is not required to be returned.
+      _iLimitWindow.PullToken(client); // GTan: this token is not required to be returned.
       return rateLimitToken;
     }
 

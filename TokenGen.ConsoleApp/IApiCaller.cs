@@ -6,7 +6,7 @@ using TokenGenLib;
 
 namespace TokenGen.ConsoleApp
 {
-  // Yatin: Example of how to hand wire the calls to tokenrepo during embedded mode.
+  // GTan: Example of how to hand wire the calls to tokenrepo during embedded mode.
   public interface IApiCaller
   {
     public Task DoWhatEverWithApiAsync();

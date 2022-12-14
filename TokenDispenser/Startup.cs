@@ -38,7 +38,7 @@ namespace TokenDispenser
       });
       var tokenMonitor = new RegisterTokenMonitor(services);
       ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "ApiLimitSetting");
-      //ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "XXXSettings"); //Yatin: Register more Api Servers as needed, encouraged only if using the TokenGenLib as Inprocess monitor.
+      //ConfigureTokenMonitorFromConfigName(services, tokenMonitor, "XXXSettings"); //GTan: Register more Api Servers as needed, encouraged only if using the TokenGenLib as Inprocess monitor.
     }
 
     private void ConfigureTokenMonitorFromConfigName(IServiceCollection services, RegisterTokenMonitor tokenMonitor, string appSettingsSectionName)
